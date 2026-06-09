@@ -1,0 +1,143 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+
+/**
+ * 更新用户资料
+ * PUT /api/user/profile
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: '未授权访问，请先登录' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { displayName, avatar } = body
+
+    // 验证 displayName
+    if (displayName !== undefined) {
+      if (typeof displayName !== 'string') {
+        return NextResponse.json(
+          { error: '昵称格式不正确' },
+          { status: 400 }
+        )
+      }
+      if (displayName.length > 50) {
+        return NextResponse.json(
+          { error: '昵称不能超过50个字符' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 验证 avatar
+    if (avatar !== undefined && avatar !== null) {
+      if (typeof avatar !== 'string') {
+        return NextResponse.json(
+          { error: '头像格式不正确' },
+          { status: 400 }
+        )
+      }
+      if (avatar.length > 500) {
+        return NextResponse.json(
+          { error: '头像URL过长' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 更新用户资料
+    const updateData: { displayName?: string; avatar?: string | null } = {}
+    if (displayName !== undefined) {
+      updateData.displayName = displayName.trim() || null
+    }
+    if (avatar !== undefined) {
+      updateData.avatar = avatar || null
+    }
+
+    const user = await prisma.user.update({
+      where: { id: session.user.id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatar: true,
+        englishLevel: true,
+      }
+    })
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        englishLevel: user.englishLevel,
+      }
+    }, { status: 200 })
+  } catch (error: unknown) {
+    console.error('更新用户资料错误:', error)
+    const errorMessage = error instanceof Error ? error.message : '更新用户资料失败'
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * 获取当前用户资料
+ * GET /api/user/profile
+ */
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: '未授权访问，请先登录' },
+        { status: 401 }
+      )
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatar: true,
+        englishLevel: true,
+        createdAt: true,
+      }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '用户不存在' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      user
+    }, { status: 200 })
+  } catch (error: unknown) {
+    console.error('获取用户资料错误:', error)
+    const errorMessage = error instanceof Error ? error.message : '获取用户资料失败'
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    )
+  }
+}

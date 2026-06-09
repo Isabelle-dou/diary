@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  hashedPassword  String
+  displayName     String?
+  avatar          String?   // 头像 URL
+  avatarHistory   String?   // 头像历史记录 (JSON 字符串)
+  englishLevel    String    @default("beginner")
+  diaries         Diary[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Diary {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  content     String
+  date        DateTime
+  wordCount   Int
+  aiAnalyzed  Boolean     @default(false)
+  aiAnalysis  AiAnalysis?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model AiAnalysis {
+  id                      String    @id @default(cuid())
+  diaryId                 String    @unique
+  diary                   Diary     @relation(fields: [diaryId], references: [id], onDelete: Cascade)
+  grammarErrors           String
+  vocabularySuggestions   String
+  collocationSuggestions  String
+  overallScore            Int
+  strengths               String
+  improvements            String
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model Collection {
+  id             String   @id @default(cuid())
+  userId         String
+  type           String
+  content        String
+  suggestion     String
+  definition     String?
+  example        String?
+  sourceDiaryId  String?
+  createdAt      DateTime @default(now())
+}
+
+model WritingStreak {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  currentStreak   Int      @default(1)
+  longestStreak   Int      @default(1)
+  lastWritingDate DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
