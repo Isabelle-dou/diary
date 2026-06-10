@@ -6,6 +6,7 @@ declare module 'next-auth' {
       id: string
       email: string
       displayName?: string
+      avatar?: string
       englishLevel: string
     }
   }
@@ -14,6 +15,7 @@ declare module 'next-auth' {
     id: string
     email: string
     displayName?: string
+    avatar?: string
     englishLevel: string
   }
 }
@@ -23,6 +25,7 @@ declare module 'next-auth/jwt' {
     id: string
     email: string
     displayName?: string
+    avatar?: string
     englishLevel: string
   }
 }
