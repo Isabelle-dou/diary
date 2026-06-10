@@ -287,7 +287,7 @@ export default function ReportPage() {
                           ))}
                         </Pie>
                         <Tooltip 
-                          formatter={(value: number) => [`${value}次`, '错误数量']}
+                          formatter={(value) => [`${value}次`, '错误数量']}
                           contentStyle={{ borderRadius: '8px', border: 'none' }}
                         />
                       </PieChart>
