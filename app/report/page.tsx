@@ -242,7 +242,7 @@ export default function ReportPage() {
                       label={{ value: '评分', angle: -90, position: 'insideLeft' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`${value}分`, '评分']}
+                      formatter={(value) => [`${value}分`, '评分']}
                       contentStyle={{ borderRadius: '8px', border: 'none' }}
                     />
                     <Line 
