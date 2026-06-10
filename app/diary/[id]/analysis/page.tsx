@@ -202,7 +202,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       const analysisData = data.analysis
       
       console.log('[Frontend] Grammar Errors:', analysisData.grammarErrors.length)
-      analysisData.grammarErrors.forEach((error, index) => {
+      analysisData.grammarErrors.forEach((error: GrammarError, index: number) => {
         const actualText = diary?.content?.substring(error.startIndex, error.endIndex) || 'N/A'
         console.log(`[Frontend] Grammar Error ${index}:`)
         console.log(`  - originalText: "${error.originalText}"`)
