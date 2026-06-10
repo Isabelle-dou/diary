@@ -212,7 +212,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
       
       console.log('[Frontend] Vocabulary Suggestions:', analysisData.vocabularySuggestions.length)
-      analysisData.vocabularySuggestions.forEach((suggestion, index) => {
+      analysisData.vocabularySuggestions.forEach((suggestion: VocabularySuggestion, index: number) => {
         const actualWord = diary?.content?.substring(suggestion.startIndex, suggestion.endIndex) || 'N/A'
         console.log(`[Frontend] Vocabulary Suggestion ${index}:`)
         console.log(`  - originalWord: "${suggestion.originalWord}"`)
@@ -222,7 +222,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
       
       console.log('[Frontend] Collocation Suggestions:', analysisData.collocationSuggestions.length)
-      analysisData.collocationSuggestions.forEach((suggestion, index) => {
+      analysisData.collocationSuggestions.forEach((suggestion: CollocationSuggestion, index: number) => {
         const actualText = diary?.content?.substring(suggestion.startIndex, suggestion.endIndex) || 'N/A'
         console.log(`[Frontend] Collocation Suggestion ${index}:`)
         console.log(`  - originalText: "${suggestion.originalText}"`)
