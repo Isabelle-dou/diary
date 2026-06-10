@@ -323,7 +323,7 @@ export default function ReportPage() {
                         label={{ value: '词汇数', angle: -90, position: 'insideLeft' }}
                       />
                       <Tooltip 
-                        formatter={(value: number) => [`${value}个`, '词汇建议']}
+                        formatter={(value) => [`${value}个`, '词汇建议']}
                         contentStyle={{ borderRadius: '8px', border: 'none' }}
                       />
                       <Bar 
