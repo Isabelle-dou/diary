@@ -270,6 +270,36 @@ export default function LoginPage() {
       if (!result || !result.ok) {
         console.error('[Login] signIn returned invalid result:', result)
         console.error('[Login] result.ok:', result?.ok)
+        
+        // 尝试使用备用直接登录API
+        console.log('[Login] Attempting fallback direct login...')
+        const directLoginResult = await fetch('/api/direct-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+          }),
+        })
+        
+        console.log('[Login] Direct login response status:', directLoginResult.status)
+        
+        if (directLoginResult.ok) {
+          const data = await directLoginResult.json()
+          console.log('[Login] Direct login successful:', data)
+          if (data.user.hasSetLevel) {
+            router.push('/dashboard')
+          } else {
+            router.push('/onboarding')
+          }
+          return
+        } else {
+          const errorData = await directLoginResult.json().catch(() => ({ message: '登录失败' }))
+          console.error('[Login] Direct login failed:', errorData)
+        }
+        
         showToast('登录失败，请重试', 'error')
         setIsLoading(false)
         console.info('[Login] ====== 登录流程结束（结果无效） ======')
