@@ -218,49 +218,12 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      console.log('[Login] Calling signIn with credentials...')
+      console.log('[Login] ====== 开始直接登录 ======')
       console.log('[Login] Email:', formData.email)
       console.log('[Login] Password length:', formData.password.length)
 
-      // 使用 Promise.race - 如果signIn在5秒内没有完成，就使用备用登录
-      const signInPromise = signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
-
-      // 创建超时Promise（5秒后触发备用登录）
-      const timeoutPromise = new Promise<{ type: 'timeout' }>((resolve) => {
-        setTimeout(() => {
-          console.error('[Login] Timeout: signIn took longer than 5 seconds')
-          resolve({ type: 'timeout' })
-        }, 5000)
-      })
-
-      // 使用 Promise.race - 谁先完成就用谁的结果
-      const raceResult = await Promise.race([
-        signInPromise.then(result => ({ type: 'success', result })),
-        timeoutPromise
-      ])
-
-      // 检查结果
-      if (raceResult.type === 'timeout') {
-        console.log('[Login] Timeout occurred, using fallback direct login...')
-      } else {
-        const result = raceResult.result
-        console.log('[Login] signIn result:', result)
-        
-        // 如果signIn成功，正常处理
-        if (result?.ok && !result.error) {
-          console.log('[Login] signIn successful, checking user level...')
-          // 继续原有的成功逻辑
-        } else {
-          console.log('[Login] signIn failed, using fallback direct login...')
-        }
-      }
-
-      // 使用备用登录API（无论是超时还是signIn失败）
-      console.log('[Login] Attempting direct login...')
+      // 直接使用备用登录API，完全绕过 NextAuth
+      console.log('[Login] Calling direct login API...')
       const directLoginResult = await fetch('/api/direct-login', {
         method: 'POST',
         headers: {
