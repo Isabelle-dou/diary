@@ -62,6 +62,87 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  // 测试数据库连接
+  const testDatabaseConnection = async () => {
+    console.log('[Login] Testing database connection...')
+    try {
+      const response = await fetch('/api/test-db')
+      const data = await response.json()
+      console.log('[Login] Database test result:', data)
+      
+      if (data.success) {
+        showToast(`数据库连接成功！用户数: ${data.userCount}`, 'success')
+      } else {
+        showToast(`数据库连接失败: ${data.error}`, 'error')
+      }
+    } catch (error) {
+      console.error('[Login] Database test error:', error)
+      showToast('数据库测试失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error')
+    }
+  }
+
+  // 检查 API 是否可达
+  const testApiHealth = async () => {
+    console.log('[Login] Testing API health...')
+    try {
+      const response = await fetch('/api/auth/session')
+      console.log('[Login] Session API status:', response.status)
+      console.log('[Login] Session API headers:', Object.fromEntries(response.headers))
+      
+      if (response.ok) {
+        const session = await response.json()
+        console.log('[Login] Session data:', session)
+        showToast('Session API 正常', 'success')
+      } else {
+        showToast(`Session API 响应异常: ${response.status}`, 'error')
+      }
+    } catch (error) {
+      console.error('[Login] API health test error:', error)
+      showToast('API 测试失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error')
+    }
+  }
+
+  // 直接调用 NextAuth API 进行登录（绕过 signIn 函数）
+  const handleDirectLogin = async () => {
+    console.log('[Login] Attempting direct login via API...')
+    
+    try {
+      const response = await fetchWithTimeout('/api/auth/callback/credentials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          email: formData.email,
+          password: formData.password,
+          callbackUrl: window.location.origin + '/onboarding',
+        }),
+      }, 10000)
+
+      console.log('[Login] Direct login response status:', response.status)
+      console.log('[Login] Direct login response redirected:', response.redirected)
+
+      if (response.redirected) {
+        console.log('[Login] Redirecting to:', response.url)
+        window.location.href = response.url
+        return
+      }
+
+      const text = await response.text()
+      console.log('[Login] Direct login response text:', text.substring(0, 500))
+
+      if (!response.ok) {
+        throw new Error(`Login failed with status ${response.status}`)
+      }
+
+      console.log('[Login] Direct login successful')
+      router.push('/onboarding')
+    } catch (error) {
+      console.error('[Login] Direct login error:', error)
+      throw error
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -86,12 +167,16 @@ export default function LoginPage() {
         email: formData.email,
         password: formData.password,
         redirect: false,
-        // @ts-ignore - signal 可能不被 signIn 支持，但尝试传递
-        signal: abortControllerRef.current.signal,
       })
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('登录请求超时，请检查网络连接或稍后重试')), 15000)
+        const timer = setTimeout(() => {
+          console.error('[Login] Timeout: signIn took longer than 15 seconds')
+          reject(new Error('登录请求超时，请检查网络连接或稍后重试'))
+        }, 15000)
+        
+        // 清理函数
+        return () => clearTimeout(timer)
       })
 
       const result = await Promise.race([signInPromise, timeoutPromise]) as any
@@ -230,6 +315,27 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          {/* 调试按钮 - 仅开发/测试环境显示 */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-center text-xs text-gray-500 mb-3">调试工具</p>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={testDatabaseConnection}
+                disabled={isLoading}
+                className="px-4 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                测试数据库
+              </button>
+              <button
+                onClick={testApiHealth}
+                disabled={isLoading}
+                className="px-4 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                检查API
+              </button>
+            </div>
+          </div>
 
           <p className="mt-6 text-center text-gray-600">
             还没有账号？{' '}
