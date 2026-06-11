@@ -271,10 +271,10 @@ export default function LoginPage() {
         return
       }
 
-      const data = await response.json()
-      console.log('[Login] check-level data:', data)
+      const levelData = await response.json()
+      console.log('[Login] check-level data:', levelData)
 
-      if (data.hasSetLevel) {
+      if (levelData.hasSetLevel) {
         console.log('[Login] User has set level, redirecting to dashboard')
         router.push('/dashboard')
       } else {
