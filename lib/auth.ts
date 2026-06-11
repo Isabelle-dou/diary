@@ -3,7 +3,15 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
+// 从环境变量获取 NextAuth Secret，如果不存在则使用默认值（仅开发环境）
+const nextAuthSecret = process.env.NEXTAUTH_SECRET
+
+if (!nextAuthSecret && process.env.NODE_ENV === 'production') {
+  console.warn('[NextAuth] WARNING: NEXTAUTH_SECRET is not set. This is required in production!')
+}
+
 export const authOptions: NextAuthOptions = {
+  secret: nextAuthSecret || 'development-secret-do-not-use-in-production',
   session: {
     strategy: 'jwt',
   },
@@ -23,35 +31,48 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        console.log('[NextAuth] Authorize called with email:', credentials?.email)
+
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            console.log('[NextAuth] Missing credentials')
+            return null
+          }
+
+          console.log('[NextAuth] Finding user in database...')
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          })
+
+          if (!user) {
+            console.log('[NextAuth] User not found:', credentials.email)
+            return null
+          }
+
+          console.log('[NextAuth] User found, comparing passwords...')
+          const passwordMatch = await bcrypt.compare(
+            credentials.password,
+            user.hashedPassword
+          )
+
+          if (!passwordMatch) {
+            console.log('[NextAuth] Password does not match')
+            return null
+          }
+
+          console.log('[NextAuth] Authentication successful for user:', user.id)
+          return {
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName ?? undefined,
+            avatar: user.avatar ?? undefined,
+            englishLevel: user.englishLevel,
+          }
+        } catch (error) {
+          console.error('[NextAuth] Authorization error:', error)
           return null
-        }
-
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        })
-
-        if (!user) {
-          return null
-        }
-
-        const passwordMatch = await bcrypt.compare(
-          credentials.password,
-          user.hashedPassword
-        )
-
-        if (!passwordMatch) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          displayName: user.displayName ?? undefined,
-          avatar: user.avatar ?? undefined,
-          englishLevel: user.englishLevel,
         }
       },
     }),

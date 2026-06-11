@@ -1,10 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/components/Toast'
+
+// 创建带超时的 fetch 函数
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs: number = 10000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('请求超时，请检查网络连接')
+    }
+    throw error
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,6 +36,16 @@ export default function LoginPage() {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // 组件卸载时取消未完成的请求
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
+  }, [])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -44,13 +75,26 @@ export default function LoginPage() {
     console.log('[Login] Form validation passed')
     setIsLoading(true)
 
+    // 创建新的 AbortController
+    abortControllerRef.current = new AbortController()
+
     try {
-      console.log('[Login] Calling signIn with credentials')
-      const result = await signIn('credentials', {
+      console.log('[Login] Calling signIn with credentials...')
+
+      // 使用 Promise.race 为 signIn 添加超时
+      const signInPromise = signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
+        // @ts-ignore - signal 可能不被 signIn 支持，但尝试传递
+        signal: abortControllerRef.current.signal,
       })
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('登录请求超时，请检查网络连接或稍后重试')), 15000)
+      })
+
+      const result = await Promise.race([signInPromise, timeoutPromise]) as any
 
       console.log('[Login] signIn result:', result)
 
@@ -68,10 +112,10 @@ export default function LoginPage() {
         return
       }
 
-      console.log('[Login] signIn successful, checking level...')
-      const response = await fetch('/api/user/check-level', {
+      console.log('[Login] signIn successful, checking user level...')
+      const response = await fetchWithTimeout('/api/user/check-level', {
         credentials: 'include',
-      })
+      }, 10000)
 
       console.log('[Login] check-level response status:', response.status)
 
@@ -95,7 +139,8 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('[Login] Unexpected error:', error)
-      showToast('发生未知错误，请重试', 'error')
+      const errorMessage = error instanceof Error ? error.message : '发生未知错误，请重试'
+      showToast(errorMessage, 'error')
       setIsLoading(false)
     }
   }
