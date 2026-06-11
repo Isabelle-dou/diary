@@ -9,7 +9,10 @@ import BottomNav from '@/components/BottomNav'
 import { 
   GrammarError, 
   VocabularySuggestion, 
+  VocabularySuggestionItem,
   CollocationSuggestion, 
+  UpgradeSuggestion,
+  UpgradeSuggestionItem,
   AiAnalysisResult 
 } from '@/lib/ai-analyzer'
 
@@ -479,7 +482,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
     const collocationSuggestions = analysis.collocationSuggestions || []
     const upgradeSuggestions = analysis.upgradeSuggestions || []
 
-    grammarErrors.forEach(error => {
+    grammarErrors.forEach((error: GrammarError) => {
       const corrected = correctHighlightIndex(error.startIndex, error.endIndex, error.originalText, content)
       allHighlights.push({
         startIndex: corrected.startIndex,
@@ -489,7 +492,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
     })
 
-    vocabularySuggestions.forEach(suggestion => {
+    vocabularySuggestions.forEach((suggestion: VocabularySuggestion) => {
       const corrected = correctHighlightIndex(suggestion.startIndex, suggestion.endIndex, suggestion.originalWord, content)
       allHighlights.push({
         startIndex: corrected.startIndex,
@@ -499,7 +502,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
     })
 
-    collocationSuggestions.forEach(suggestion => {
+    collocationSuggestions.forEach((suggestion: CollocationSuggestion) => {
       const corrected = correctHighlightIndex(suggestion.startIndex, suggestion.endIndex, suggestion.originalText, content)
       allHighlights.push({
         startIndex: corrected.startIndex,
@@ -515,7 +518,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
     let lastIndex = 0
     let keyCounter = 0
 
-    allHighlights.forEach((highlight) => {
+    allHighlights.forEach((highlight: HighlightInfo) => {
       if (highlight.startIndex > lastIndex) {
         parts.push(
           <span key={`text-${keyCounter++}`}>
@@ -1121,7 +1124,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             </h3>
             {analysis?.grammarErrors && analysis.grammarErrors.length > 0 ? (
               <div className="space-y-3">
-                {analysis.grammarErrors.map((error) => {
+                {analysis.grammarErrors.map((error: GrammarError) => {
                   const collected = isCollected('phrase', error.originalText, error.suggestion)
                   
                   const handleCollect = async () => {
@@ -1212,7 +1215,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             </h3>
             {analysis?.vocabularySuggestions && analysis.vocabularySuggestions.length > 0 ? (
               <div className="space-y-3">
-                {analysis.vocabularySuggestions.map((suggestion) => {
+                {analysis.vocabularySuggestions.map((suggestion: VocabularySuggestion) => {
                   // 检查是否有任何一个替换建议已收藏
                   const hasCollected = suggestion.suggestions.some(item => 
                     isCollected('word', suggestion.originalWord, item.word)
@@ -1274,7 +1277,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                         </button>
                       </div>
                       <div className="space-y-2">
-                        {suggestion.suggestions.map((item, index) => (
+                        {suggestion.suggestions.map((item: VocabularySuggestionItem, index: number) => (
                           <div key={index} className="p-3 bg-white rounded-lg border border-gray-100">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-lg font-semibold text-gray-800">{item.word}</span>
@@ -1314,7 +1317,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             </h3>
             {analysis?.collocationSuggestions && analysis.collocationSuggestions.length > 0 ? (
               <div className="space-y-3">
-                {analysis.collocationSuggestions.map((suggestion) => {
+                {analysis.collocationSuggestions.map((suggestion: CollocationSuggestion) => {
                   const collected = isCollected('collocation', suggestion.originalText, suggestion.suggestion)
                   
                   const handleCollect = async () => {
@@ -1401,7 +1404,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             </h3>
             {analysis?.upgradeSuggestions && analysis.upgradeSuggestions.length > 0 ? (
               <div className="space-y-3">
-                {analysis.upgradeSuggestions.map((suggestion) => (
+                {analysis.upgradeSuggestions.map((suggestion: UpgradeSuggestion) => (
                   <div key={suggestion.id} className="p-4 bg-green-50 rounded-xl border border-green-100">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -1411,7 +1414,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                     </div>
                     <p className="text-gray-600 text-sm mb-3">{suggestion.explanation}</p>
                     <div className="space-y-2">
-                      {suggestion.suggestions.map((item, index) => {
+                      {suggestion.suggestions.map((item: UpgradeSuggestionItem, index: number) => {
                         const collected = isCollected('word', suggestion.originalText, item.word)
                         
                         const handleCollect = async () => {
