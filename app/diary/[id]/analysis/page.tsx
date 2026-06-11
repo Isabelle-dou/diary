@@ -266,7 +266,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
     const collocationSuggestions = analysis.collocationSuggestions || []
     const upgradeSuggestions = analysis.upgradeSuggestions || []
 
-    grammarErrors.forEach(error => {
+    grammarErrors.forEach((error: GrammarError) => {
       allHighlights.push({
         startIndex: error.startIndex,
         endIndex: error.endIndex,
@@ -275,7 +275,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
     })
 
-    vocabularySuggestions.forEach(suggestion => {
+    vocabularySuggestions.forEach((suggestion: VocabularySuggestion) => {
       allHighlights.push({
         startIndex: suggestion.startIndex,
         endIndex: suggestion.endIndex,
@@ -284,7 +284,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       })
     })
 
-    collocationSuggestions.forEach(suggestion => {
+    collocationSuggestions.forEach((suggestion: CollocationSuggestion) => {
       allHighlights.push({
         startIndex: suggestion.startIndex,
         endIndex: suggestion.endIndex,
@@ -295,7 +295,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
 
     allHighlights.sort((a, b) => b.startIndex - a.endIndex)
 
-    allHighlights.forEach(highlight => {
+    allHighlights.forEach((highlight: HighlightInfo) => {
       if (highlight.type === 'grammar') {
         const grammarError = highlight.data as GrammarError
         result = result.substring(0, highlight.startIndex) + 
