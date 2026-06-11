@@ -50,11 +50,19 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    console.log('[Frontend] Registration form submitted')
+    console.log('[Frontend] Email:', formData.email)
 
+    if (!validateForm()) {
+      console.log('[Frontend] Form validation failed')
+      return
+    }
+
+    console.log('[Frontend] Form validation passed, starting registration...')
     setIsLoading(true)
 
     try {
+      console.log('[Frontend] Sending registration request to /api/auth/register')
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -64,36 +72,45 @@ export default function RegisterPage() {
         }),
       })
 
+      console.log('[Frontend] Registration response received, status:', response.status)
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({ error: '服务器响应异常' }))
+        const data = await response.json().catch((err) => {
+          console.error('[Frontend] Failed to parse error response:', err)
+          return { error: '服务器响应异常' }
+        })
+        console.error('[Frontend] Registration failed:', data.error)
         showToast(data.error || `注册失败 (${response.status})`, 'error')
         setIsLoading(false)
         return
       }
 
       const data = await response.json()
-      console.log('Registration response:', data)
+      console.log('[Frontend] Registration successful:', data)
 
+      console.log('[Frontend] Attempting auto login...')
       const loginResult = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
-      console.log('Login result:', loginResult)
+      console.log('[Frontend] Login result:', loginResult)
 
       if (loginResult?.error) {
+        console.error('[Frontend] Auto login failed:', loginResult.error)
         showToast('注册成功但自动登录失败，请手动登录', 'error')
         setIsLoading(false)
         return
       }
 
+      console.log('[Frontend] Auto login successful, redirecting to /onboarding')
       showToast('注册成功', 'success')
       setTimeout(() => {
         router.push('/onboarding')
       }, 1000)
     } catch (error) {
-      console.error('Registration error:', error)
+      console.error('[Frontend] Registration error:', error)
       showToast('发生未知错误，请重试', 'error')
       setIsLoading(false)
     }
