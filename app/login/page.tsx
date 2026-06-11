@@ -189,21 +189,26 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // 强制输出日志（确保能在控制台看到）
+    const startTime = Date.now()
+    console.info('[Login] ====== 登录流程开始 ======')
+    console.info('[Login] 时间:', new Date().toLocaleTimeString())
+
     console.log('[Login] Form submitted')
 
     if (!validateForm()) {
       console.log('[Login] Form validation failed')
+      console.info('[Login] ====== 登录流程结束（验证失败） ======')
       return
     }
 
     console.log('[Login] Form validation passed')
     setIsLoading(true)
 
-    // 创建新的 AbortController
-    abortControllerRef.current = new AbortController()
-
     try {
       console.log('[Login] Calling signIn with credentials...')
+      console.log('[Login] Email:', formData.email)
+      console.log('[Login] Password length:', formData.password.length)
 
       // 使用 Promise.race 为 signIn 添加超时
       const signInPromise = signIn('credentials', {
@@ -212,31 +217,50 @@ export default function LoginPage() {
         redirect: false,
       })
 
-      const timeoutPromise = new Promise((_, reject) => {
-        const timer = setTimeout(() => {
+      // 创建超时Promise（确保清理函数正确工作）
+      let timeoutId: ReturnType<typeof setTimeout> | null = null
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        timeoutId = setTimeout(() => {
           console.error('[Login] Timeout: signIn took longer than 15 seconds')
           reject(new Error('登录请求超时，请检查网络连接或稍后重试'))
         }, 15000)
-        
-        // 清理函数
-        return () => clearTimeout(timer)
       })
 
-      const result = await Promise.race([signInPromise, timeoutPromise]) as any
+      // 使用 Promise.allSettled 来处理，确保超时后也能清理
+      const results = await Promise.allSettled([signInPromise, timeoutPromise])
+      
+      // 清理超时定时器
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
 
+      // 检查是否超时
+      if (results[1]?.status === 'rejected') {
+        throw results[1].reason
+      }
+
+      // 获取signIn的结果
+      const result = results[0].status === 'fulfilled' ? results[0].value : null
+
+      console.log('[Login] signIn result type:', typeof result)
       console.log('[Login] signIn result:', result)
 
+      // 检查结果是否有错误
       if (result?.error) {
         console.error('[Login] signIn error:', result.error)
+        console.error('[Login] Error type:', typeof result.error)
         showToast('邮箱或密码错误', 'error')
         setIsLoading(false)
+        console.info('[Login] ====== 登录流程结束（认证失败） ======')
         return
       }
 
       if (!result || !result.ok) {
         console.error('[Login] signIn returned invalid result:', result)
+        console.error('[Login] result.ok:', result?.ok)
         showToast('登录失败，请重试', 'error')
         setIsLoading(false)
+        console.info('[Login] ====== 登录流程结束（结果无效） ======')
         return
       }
 
@@ -252,6 +276,7 @@ export default function LoginPage() {
         console.error('[Login] check-level API error:', errorData)
         showToast(errorData.error || '获取用户信息失败', 'error')
         setIsLoading(false)
+        console.info('[Login] ====== 登录流程结束（API错误） ======')
         return
       }
 
@@ -266,7 +291,10 @@ export default function LoginPage() {
         router.push('/onboarding')
       }
     } catch (error) {
+      console.error('[Login] ====== 登录流程异常结束 ======')
       console.error('[Login] Unexpected error:', error)
+      console.error('[Login] Error type:', typeof error)
+      console.error('[Login] Error stack:', error instanceof Error ? error.stack : 'N/A')
       const errorMessage = error instanceof Error ? error.message : '发生未知错误，请重试'
       showToast(errorMessage, 'error')
       setIsLoading(false)
