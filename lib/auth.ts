@@ -31,11 +31,16 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials) {
+        console.log('[NextAuth] ====== Authorize 开始 ======')
         console.log('[NextAuth] Authorize called with email:', credentials?.email)
+        console.log('[NextAuth] Credentials received:', credentials ? 'Yes' : 'No')
 
         try {
           if (!credentials?.email || !credentials?.password) {
             console.log('[NextAuth] Missing credentials')
+            console.log('[NextAuth] Email provided:', !!credentials?.email)
+            console.log('[NextAuth] Password provided:', !!credentials?.password)
+            console.log('[NextAuth] ====== Authorize 结束（缺少凭证） ======')
             return null
           }
 
@@ -46,23 +51,51 @@ export const authOptions: NextAuthOptions = {
             },
           })
 
+          console.log('[NextAuth] User found:', user ? 'Yes' : 'No')
+          
           if (!user) {
             console.log('[NextAuth] User not found:', credentials.email)
+            console.log('[NextAuth] ====== Authorize 结束（用户不存在） ======')
             return null
           }
 
-          console.log('[NextAuth] User found, comparing passwords...')
-          const passwordMatch = await bcrypt.compare(
-            credentials.password,
-            user.hashedPassword
-          )
+          console.log('[NextAuth] User ID:', user.id)
+          console.log('[NextAuth] User email:', user.email)
+          console.log('[NextAuth] hashedPassword exists:', !!user.hashedPassword)
+          console.log('[NextAuth] hashedPassword length:', user.hashedPassword?.length || 0)
+
+          if (!user.hashedPassword) {
+            console.log('[NextAuth] ERROR: User has no hashedPassword')
+            console.log('[NextAuth] ====== Authorize 结束（无密码哈希） ======')
+            return null
+          }
+
+          console.log('[NextAuth] Comparing passwords...')
+          console.log('[NextAuth] Password to check length:', credentials.password.length)
+          
+          let passwordMatch = false
+          try {
+            passwordMatch = await bcrypt.compare(
+              credentials.password,
+              user.hashedPassword
+            )
+            console.log('[NextAuth] Password comparison result:', passwordMatch)
+          } catch (bcryptError) {
+            console.error('[NextAuth] bcrypt compare error:', bcryptError)
+            console.log('[NextAuth] ====== Authorize 结束（bcrypt错误） ======')
+            return null
+          }
 
           if (!passwordMatch) {
             console.log('[NextAuth] Password does not match')
+            // 调试：打印部分哈希值用于对比
+            console.log('[NextAuth] Stored hash (first 20 chars):', user.hashedPassword.substring(0, 20))
+            console.log('[NextAuth] ====== Authorize 结束（密码不匹配） ======')
             return null
           }
 
           console.log('[NextAuth] Authentication successful for user:', user.id)
+          console.log('[NextAuth] ====== Authorize 结束（成功） ======')
           return {
             id: user.id,
             email: user.email,
@@ -71,7 +104,10 @@ export const authOptions: NextAuthOptions = {
             englishLevel: user.englishLevel,
           }
         } catch (error) {
+          console.error('[NextAuth] ====== Authorize 异常结束 ======')
           console.error('[NextAuth] Authorization error:', error)
+          console.error('[NextAuth] Error type:', typeof error)
+          console.error('[NextAuth] Error stack:', error instanceof Error ? error.stack : 'N/A')
           return null
         }
       },
