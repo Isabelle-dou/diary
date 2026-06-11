@@ -64,19 +64,23 @@ export default function RegisterPage() {
         }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        showToast(data.error || '注册失败', 'error')
+        const data = await response.json().catch(() => ({ error: '服务器响应异常' }))
+        showToast(data.error || `注册失败 (${response.status})`, 'error')
         setIsLoading(false)
         return
       }
+
+      const data = await response.json()
+      console.log('Registration response:', data)
 
       const loginResult = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
+
+      console.log('Login result:', loginResult)
 
       if (loginResult?.error) {
         showToast('注册成功但自动登录失败，请手动登录', 'error')
@@ -85,8 +89,11 @@ export default function RegisterPage() {
       }
 
       showToast('注册成功', 'success')
-      router.push('/onboarding')
-    } catch {
+      setTimeout(() => {
+        router.push('/onboarding')
+      }, 1000)
+    } catch (error) {
+      console.error('Registration error:', error)
       showToast('发生未知错误，请重试', 'error')
       setIsLoading(false)
     }
