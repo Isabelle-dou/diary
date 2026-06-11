@@ -222,33 +222,28 @@ export default function LoginPage() {
       console.log('[Login] Email:', formData.email)
       console.log('[Login] Password length:', formData.password.length)
 
-      // 使用 Promise.race 为 signIn 添加超时
+      // 使用 Promise.race 为 signIn 添加较短的超时（5秒）
       const signInPromise = signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
-      // 创建超时Promise（确保清理函数正确工作）
+      // 创建超时Promise（5秒后自动使用备用登录）
       let timeoutId: ReturnType<typeof setTimeout> | null = null
       const timeoutPromise = new Promise<void>((_, reject) => {
         timeoutId = setTimeout(() => {
-          console.error('[Login] Timeout: signIn took longer than 15 seconds')
-          reject(new Error('登录请求超时，请检查网络连接或稍后重试'))
-        }, 15000)
+          console.error('[Login] Timeout: signIn took longer than 5 seconds, using fallback')
+          reject(new Error('超时，使用备用登录'))
+        }, 5000)
       })
 
-      // 使用 Promise.allSettled 来处理，确保超时后也能清理
+      // 使用 Promise.allSettled 来处理
       const results = await Promise.allSettled([signInPromise, timeoutPromise])
       
       // 清理超时定时器
       if (timeoutId) {
         clearTimeout(timeoutId)
-      }
-
-      // 检查是否超时
-      if (results[1]?.status === 'rejected') {
-        throw results[1].reason
       }
 
       // 获取signIn的结果
@@ -257,22 +252,14 @@ export default function LoginPage() {
       console.log('[Login] signIn result type:', typeof result)
       console.log('[Login] signIn result:', result)
 
-      // 检查结果是否有错误
-      if (result?.error) {
-        console.error('[Login] signIn error:', result.error)
-        console.error('[Login] Error type:', typeof result.error)
-        showToast('邮箱或密码错误', 'error')
-        setIsLoading(false)
-        console.info('[Login] ====== 登录流程结束（认证失败） ======')
-        return
-      }
+      // 检查是否超时或结果无效
+      const isTimeout = results[1]?.status === 'rejected'
+      const isResultValid = result && result.ok && !result.error
 
-      if (!result || !result.ok) {
-        console.error('[Login] signIn returned invalid result:', result)
-        console.error('[Login] result.ok:', result?.ok)
+      if (!isResultValid || isTimeout) {
+        console.log('[Login] signIn failed or timeout, using fallback direct login...')
         
-        // 尝试使用备用直接登录API
-        console.log('[Login] Attempting fallback direct login...')
+        // 直接使用备用登录API
         const directLoginResult = await fetch('/api/direct-login', {
           method: 'POST',
           headers: {
@@ -298,12 +285,11 @@ export default function LoginPage() {
         } else {
           const errorData = await directLoginResult.json().catch(() => ({ message: '登录失败' }))
           console.error('[Login] Direct login failed:', errorData)
+          showToast(errorData.message || '登录失败，请重试', 'error')
+          setIsLoading(false)
+          console.info('[Login] ====== 登录流程结束（备用登录失败） ======')
+          return
         }
-        
-        showToast('登录失败，请重试', 'error')
-        setIsLoading(false)
-        console.info('[Login] ====== 登录流程结束（结果无效） ======')
-        return
       }
 
       console.log('[Login] signIn successful, checking user level...')
