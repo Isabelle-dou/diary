@@ -4,13 +4,7 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-const prismaOptions = {
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'info', 'warn', 'error'] 
-    : ['error'],
-}
-
-export const prisma = globalThis.prisma || new PrismaClient(prismaOptions)
+export const prisma = globalThis.prisma || new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma
