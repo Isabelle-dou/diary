@@ -34,34 +34,67 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    console.log('[Login] Form submitted')
 
+    if (!validateForm()) {
+      console.log('[Login] Form validation failed')
+      return
+    }
+
+    console.log('[Login] Form validation passed')
     setIsLoading(true)
 
     try {
+      console.log('[Login] Calling signIn with credentials')
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
+      console.log('[Login] signIn result:', result)
+
       if (result?.error) {
+        console.error('[Login] signIn error:', result.error)
         showToast('邮箱或密码错误', 'error')
         setIsLoading(false)
         return
       }
 
+      if (!result || !result.ok) {
+        console.error('[Login] signIn returned invalid result:', result)
+        showToast('登录失败，请重试', 'error')
+        setIsLoading(false)
+        return
+      }
+
+      console.log('[Login] signIn successful, checking level...')
       const response = await fetch('/api/user/check-level', {
         credentials: 'include',
       })
+
+      console.log('[Login] check-level response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'API 调用失败' }))
+        console.error('[Login] check-level API error:', errorData)
+        showToast(errorData.error || '获取用户信息失败', 'error')
+        setIsLoading(false)
+        return
+      }
+
       const data = await response.json()
+      console.log('[Login] check-level data:', data)
 
       if (data.hasSetLevel) {
+        console.log('[Login] User has set level, redirecting to dashboard')
         router.push('/dashboard')
       } else {
+        console.log('[Login] User needs onboarding, redirecting to onboarding')
         router.push('/onboarding')
       }
-    } catch {
+    } catch (error) {
+      console.error('[Login] Unexpected error:', error)
       showToast('发生未知错误，请重试', 'error')
       setIsLoading(false)
     }
