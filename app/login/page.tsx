@@ -38,6 +38,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // 页面加载时立即输出日志（确保能看到）
+  useEffect(() => {
+    console.info('=====================================')
+    console.info('========== 登录页面已加载 ==========')
+    console.info('=====================================')
+    console.log('[Login] 当前时间:', new Date().toLocaleString())
+    console.log('[Login] 当前URL:', window.location.href)
+    console.log('[Login] NextAuth版本:', '4.x')
+    console.log('[Login] 页面状态: 准备就绪')
+    console.info('=====================================')
+  }, [])
+
   // 组件卸载时取消未完成的请求
   useEffect(() => {
     return () => {
