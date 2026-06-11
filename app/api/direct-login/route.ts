@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import bcrypt from 'bcrypt'
+import bcryptjs from 'bcryptjs'
 import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
 
 export async function POST(request: Request) {
   console.log('[Direct Login] API called')
@@ -31,24 +30,16 @@ export async function POST(request: Request) {
 
     console.log('[Direct Login] User found:', user.id)
 
-    // 验证密码
-    const passwordMatch = await bcrypt.compare(password, user.hashedPassword)
+    // 验证密码（使用 bcryptjs）
+    const passwordMatch = await bcryptjs.compare(password, user.hashedPassword)
     
     if (!passwordMatch) {
       console.log('[Direct Login] Password mismatch')
       return NextResponse.json({ success: false, message: '邮箱或密码错误' }, { status: 401 })
     }
 
-    // 创建 JWT token
-    const secret = process.env.NEXTAUTH_SECRET || 'fallback-secret'
-    const token = jwt.sign(
-      { userId: user.id, email: user.email },
-      secret,
-      { expiresIn: '1d' }
-    )
-
-    // 设置 cookie
-    cookies().set('auth-token', token, {
+    // 设置用户 ID 到 cookie（简单方式）
+    cookies().set('user-id', user.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
