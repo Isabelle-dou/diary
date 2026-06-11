@@ -102,6 +102,49 @@ export default function LoginPage() {
     }
   }
 
+  // 使用简单登录API（绕过 NextAuth）
+  const handleSimpleLogin = async () => {
+    console.log('[Login] Attempting simple login via /api/simple-login...')
+    setIsLoading(true)
+    
+    try {
+      const response = await fetchWithTimeout('/api/simple-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      }, 10000)
+
+      console.log('[Login] Simple login response status:', response.status)
+      
+      const data = await response.json()
+      console.log('[Login] Simple login response:', data)
+
+      if (!response.ok || !data.success) {
+        showToast(data.message || '登录失败', 'error')
+        setIsLoading(false)
+        return
+      }
+
+      console.log('[Login] Simple login successful! User:', data.user)
+      
+      // 根据用户级别跳转
+      if (data.user.hasSetLevel) {
+        router.push('/dashboard')
+      } else {
+        router.push('/onboarding')
+      }
+    } catch (error) {
+      console.error('[Login] Simple login error:', error)
+      showToast('登录失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error')
+      setIsLoading(false)
+    }
+  }
+
   // 直接调用 NextAuth API 进行登录（绕过 signIn 函数）
   const handleDirectLogin = async () => {
     console.log('[Login] Attempting direct login via API...')
@@ -319,7 +362,7 @@ export default function LoginPage() {
           {/* 调试按钮 - 仅开发/测试环境显示 */}
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-center text-xs text-gray-500 mb-3">调试工具</p>
-            <div className="flex gap-2 justify-center">
+            <div className="flex flex-wrap gap-2 justify-center">
               <button
                 onClick={testDatabaseConnection}
                 disabled={isLoading}
@@ -333,6 +376,13 @@ export default function LoginPage() {
                 className="px-4 py-2 text-xs bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
                 检查API
+              </button>
+              <button
+                onClick={handleSimpleLogin}
+                disabled={isLoading}
+                className="px-4 py-2 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50"
+              >
+                简单登录
               </button>
             </div>
           </div>
