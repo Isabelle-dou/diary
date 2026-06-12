@@ -29,12 +29,12 @@ export async function middleware(request: NextRequest) {
           select: { id: true, email: true, englishLevel: true },
         })
         if (user) {
-          token = {
-            userId: user.id,
-            email: user.email,
-            englishLevel: user.englishLevel,
-          }
-        }
+        token = {
+          id: user.id,
+          email: user.email,
+          englishLevel: user.englishLevel,
+        } as any
+      }
       } catch (error) {
         console.error('[Middleware] Error verifying user cookie:', error)
       }
