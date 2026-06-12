@@ -246,25 +246,25 @@ export default function LoginPage() {
       console.log('[Login] 响应状态文本:', directLoginResult.statusText)
       
       if (directLoginResult.ok) {
-        console.log('[Login] 响应成功，解析JSON...')
+        console.log('[Login] 响应成功，解析 JSON...')
         const data = await directLoginResult.json()
         console.log('[Login] Direct login successful:', JSON.stringify(data))
         
         if (data.user && data.user.hasSetLevel !== undefined) {
           console.log('[Login] 用户级别已设置:', data.user.hasSetLevel)
-          if (data.user.hasSetLevel) {
-            console.log('[Login] 跳转到 /dashboard')
-            router.push('/dashboard')
-          } else {
-            console.log('[Login] 跳转到 /onboarding')
-            router.push('/onboarding')
-          }
+          const targetPath = data.user.hasSetLevel ? '/dashboard' : '/onboarding'
+          console.log('[Login] 准备跳转到:', targetPath)
+          
+          // 使用 setTimeout 确保 cookie 已经设置
+          setTimeout(() => {
+            router.push(targetPath)
+          }, 100)
+          return
         } else {
           console.error('[Login] 用户数据不完整:', data)
           showToast('登录失败：用户数据不完整', 'error')
           setIsLoading(false)
         }
-        return
       } else {
         console.log('[Login] 响应失败，解析错误信息...')
         const errorData = await directLoginResult.json().catch(() => ({ message: '登录失败' }))
@@ -272,35 +272,8 @@ export default function LoginPage() {
         showToast(errorData.message || '登录失败，请重试', 'error')
         setIsLoading(false)
         console.info('[Login] ====== 登录流程结束（备用登录失败） ======')
-        return
       }
-
-      console.log('[Login] signIn successful, checking user level...')
-      const response = await fetchWithTimeout('/api/user/check-level', {
-        credentials: 'include',
-      }, 10000)
-
-      console.log('[Login] check-level response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'API 调用失败' }))
-        console.error('[Login] check-level API error:', errorData)
-        showToast(errorData.error || '获取用户信息失败', 'error')
-        setIsLoading(false)
-        console.info('[Login] ====== 登录流程结束（API错误） ======')
-        return
-      }
-
-      const levelData = await response.json()
-      console.log('[Login] check-level data:', levelData)
-
-      if (levelData.hasSetLevel) {
-        console.log('[Login] User has set level, redirecting to dashboard')
-        router.push('/dashboard')
-      } else {
-        console.log('[Login] User needs onboarding, redirecting to onboarding')
-        router.push('/onboarding')
-      }
+      return
     } catch (error) {
       console.error('[Login] ====== 登录流程异常结束 ======')
       console.error('[Login] Unexpected error:', error)

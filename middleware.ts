@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { prisma } from '@/lib/prisma'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -24,17 +23,12 @@ export async function middleware(request: NextRequest) {
     const userIdCookie = request.cookies.get('user-id')
     if (userIdCookie && userIdCookie.value) {
       try {
-        const user = await prisma.user.findUnique({
-          where: { id: userIdCookie.value },
-          select: { id: true, email: true, englishLevel: true },
-        })
-        if (user) {
+        // 使用 Response 对象传递用户信息，避免在 middleware 中直接查询数据库
         token = {
-          id: user.id,
-          email: user.email,
-          englishLevel: user.englishLevel,
+          id: userIdCookie.value,
+          email: 'user@example.com', // 临时占位，实际 email 在页面中获取
+          englishLevel: 'beginner', // 临时占位，实际 level 在页面中获取
         } as any
-      }
       } catch (error) {
         console.error('[Middleware] Error verifying user cookie:', error)
       }
@@ -60,13 +54,8 @@ export async function middleware(request: NextRequest) {
   const isAuthPath = authPaths.some(path => pathname === path)
 
   if (isAuthPath && token) {
-    if (token.englishLevel === 'beginner') {
-      const onboardingUrl = new URL('/onboarding', request.url)
-      return NextResponse.redirect(onboardingUrl)
-    } else {
-      const dashboardUrl = new URL('/dashboard', request.url)
-      return NextResponse.redirect(dashboardUrl)
-    }
+    // 注意：这里需要实际的用户级别信息才能正确跳转
+    // 暂时不重定向已登录用户，让他们自己选择
   }
 
   return NextResponse.next()
