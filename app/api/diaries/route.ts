@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
     })
 
     // 保存日记成功后，更新 streak
-    await updateStreak(session.user.id, diary.date)
+    await updateStreak(userId, diary.date)
 
     return NextResponse.json(
       {
