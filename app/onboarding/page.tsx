@@ -63,6 +63,7 @@ export default function OnboardingPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ englishLevel: selectedLevel }),
+        credentials: 'include', // 确保发送认证 cookie
       })
 
       const data = await response.json()
