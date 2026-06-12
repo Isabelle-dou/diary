@@ -74,13 +74,32 @@ export default function DashboardPage() {
   }
 
   const fetchDiaries = useCallback(async (page: number = 1) => {
+    // #region debug-point onboarding-dashboard-loading
+    // 假设 A, B: 检查 API 请求和响应
+    console.log('[DEBUG-fetchDiaries] START - page:', page)
+    console.log('[DEBUG-fetchDiaries] current cookies:', document.cookie)
+    // #endregion
+    
     try {
       const response = await fetch(`/api/diaries?page=${page}`, {
         credentials: 'include',
       })
+      
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchDiaries] Response status:', response.status)
+      console.log('[DEBUG-fetchDiaries] Response ok:', response.ok)
+      // #endregion
+      
       const data = await response.json()
+      
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchDiaries] Response data:', JSON.stringify(data))
+      // #endregion
 
       if (!response.ok) {
+        // #region debug-point onboarding-dashboard-loading
+        console.log('[DEBUG-fetchDiaries] Error response - error:', data.error)
+        // #endregion
         showToast(data.error || '获取日记列表失败', 'error')
         setIsLoading(false)
         return
@@ -96,25 +115,55 @@ export default function DashboardPage() {
         page: data.page,
         totalPages: data.totalPages,
       })
+      
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchDiaries] SUCCESS - setIsLoading(false)')
+      // #endregion
       setIsLoading(false)
     } catch (error) {
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchDiaries] CATCH - error:', error)
+      // #endregion
       showToast('获取日记列表发生错误', 'error')
       setIsLoading(false)
     }
   }, [showToast])
 
   const fetchStreak = useCallback(async () => {
+    // #region debug-point onboarding-dashboard-loading
+    // 假设 A, B: 检查 streak API 请求
+    console.log('[DEBUG-fetchStreak] START')
+    console.log('[DEBUG-fetchStreak] current cookies:', document.cookie)
+    // #endregion
+    
     setStreakLoading(true)
     try {
       const response = await fetch('/api/stats/streak', {
         credentials: 'include',
       })
+      
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchStreak] Response status:', response.status)
+      // #endregion
+      
       if (response.ok) {
         const data = await response.json()
         setStreakData(data)
+        
+        // #region debug-point onboarding-dashboard-loading
+        console.log('[DEBUG-fetchStreak] SUCCESS')
+        // #endregion
+      } else {
+        // #region debug-point onboarding-dashboard-loading
+        console.log('[DEBUG-fetchStreak] Error response')
+        // #endregion
       }
     } catch (error) {
       console.error('获取 streak 数据失败:', error)
+      
+      // #region debug-point onboarding-dashboard-loading
+      console.log('[DEBUG-fetchStreak] CATCH - error:', error)
+      // #endregion
     }
     setStreakLoading(false)
   }, [])
@@ -124,6 +173,15 @@ export default function DashboardPage() {
   useEffect(() => {
     // 检查是否有 user-id cookie（确认用户已登录）
     const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // #region debug-point onboarding-dashboard-loading
+    // 假设 A, C: 检查 status 和 cookie 状态
+    console.log('[DEBUG-AuthCheck] status:', status)
+    console.log('[DEBUG-AuthCheck] userIdCookie exists:', !!userIdCookie)
+    console.log('[DEBUG-AuthCheck] userIdCookie value:', userIdCookie)
+    console.log('[DEBUG-AuthCheck] isLoading:', isLoading)
+    console.log('[DEBUG-AuthCheck] diaries.length:', diaries.length)
+    // #endregion
     
     if (userIdCookie || status === 'authenticated') {
       console.log('[Dashboard] 用户已认证，开始加载数据...')
