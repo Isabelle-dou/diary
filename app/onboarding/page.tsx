@@ -40,20 +40,20 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
 
   // 简化认证检查：信任 middleware 的认证
+  // 不再检查 NextAuth status，因为我们使用自定义 cookie 认证
   useEffect(() => {
     // 检查是否有 user-id cookie
     const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
     
-    // 如果已认证且级别已设置，直接跳转到 dashboard
-    if ((status === 'authenticated' && session?.user?.englishLevel !== 'beginner') || 
-        (status === 'unauthenticated' && userIdCookie)) {
-      // 检查 localStorage 或直接跳转
+    // 如果有 user-id cookie 且 localStorage 中有级别信息，直接跳转到 dashboard
+    if (userIdCookie) {
       const storedLevel = localStorage.getItem('englishLevel')
       if (storedLevel && storedLevel !== 'beginner') {
+        console.log('[Onboarding] 用户已认证且级别已设置，跳转到 dashboard')
         window.location.href = '/dashboard'
       }
     }
-  }, [status, session, router])
+  }, [router])
 
   const handleSubmit = async () => {
     if (!selectedLevel) {

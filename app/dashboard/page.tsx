@@ -170,6 +170,7 @@ export default function DashboardPage() {
 
   // 简化认证检查：信任 middleware 的认证
   // 只要页面能加载到这里，说明已经通过认证
+  // 不再检查 NextAuth status，因为我们使用自定义 cookie 认证
   useEffect(() => {
     // 检查是否有 user-id cookie（确认用户已登录）
     const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
@@ -183,15 +184,17 @@ export default function DashboardPage() {
     console.log('[DEBUG-AuthCheck] diaries.length:', diaries.length)
     // #endregion
     
-    if (userIdCookie || status === 'authenticated') {
-      console.log('[Dashboard] 用户已认证，开始加载数据...')
+    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
+    if (userIdCookie) {
+      console.log('[Dashboard] 用户已认证（user-id cookie），开始加载数据...')
       fetchDiaries()
       fetchStreak()
-    } else if (status === 'unauthenticated') {
-      console.log('[Dashboard] 用户未认证，重定向到登录页...')
-      router.push('/login')
+    } else {
+      // 如果没有 cookie，说明真的未认证
+      console.log('[Dashboard] 用户未认证（无 cookie），等待 middleware 重定向...')
+      // 注意：不再主动重定向，由 middleware 处理
     }
-  }, [status, fetchDiaries, fetchStreak, router])
+  }, [fetchDiaries, fetchStreak])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
