@@ -285,12 +285,42 @@ export default function LoginPage() {
           const targetPath = data.user.hasSetLevel ? '/dashboard' : '/onboarding'
           console.log('[Login] 准备跳转到:', targetPath)
           
-          // 使用 window.location.href 进行跳转，避免 router.push 导致的刷新问题
-          console.log('[Login] 即将执行跳转...')
-          setTimeout(() => {
+          // 等待更长时间确保 cookie 被正确设置
+          // 使用较长的延迟确保 cookie 已写入
+          const waitForCookie = () => {
+            return new Promise<void>((resolve) => {
+              const checkCookie = () => {
+                const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+                if (userIdCookie) {
+                  console.log('[Login] Cookie 已设置成功:', userIdCookie)
+                  resolve()
+                } else {
+                  console.log('[Login] 等待 Cookie 设置...')
+                  setTimeout(checkCookie, 50)
+                }
+              }
+              // 先等待一小段时间让浏览器处理响应
+              setTimeout(checkCookie, 100)
+            })
+          }
+          
+          try {
+            console.log('[Login] 等待 Cookie 设置...')
+            // 最多等待 2 秒
+            const timeoutPromise = new Promise<void>((_, reject) => {
+              setTimeout(() => reject(new Error('Cookie 设置超时')), 2000)
+            })
+            
+            await Promise.race([waitForCookie(), timeoutPromise])
+            
             console.log('[Login] 执行跳转:', targetPath)
             window.location.href = targetPath
-          }, 100)
+          } catch (error) {
+            console.error('[Login] Cookie 设置失败或超时:', error)
+            // 即使 cookie 检查失败，仍然尝试跳转（middleware 会处理）
+            console.log('[Login] Cookie 检查失败，仍然尝试跳转:', targetPath)
+            window.location.href = targetPath
+          }
           return
         } else {
           console.error('[Login] 用户数据不完整:', data)
