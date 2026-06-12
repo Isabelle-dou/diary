@@ -39,14 +39,20 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // 信任 middleware 的认证检查，只在 NextAuth session 准备好时处理
+  // 简化认证检查：信任 middleware 的认证
   useEffect(() => {
-    // 认证检查由 middleware 处理
-    // 只在有 NextAuth session 时检查用户级别
-    if (status === 'authenticated' && session?.user?.englishLevel !== 'beginner') {
-      router.push('/dashboard')
+    // 检查是否有 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 如果已认证且级别已设置，直接跳转到 dashboard
+    if ((status === 'authenticated' && session?.user?.englishLevel !== 'beginner') || 
+        (status === 'unauthenticated' && userIdCookie)) {
+      // 检查 localStorage 或直接跳转
+      const storedLevel = localStorage.getItem('englishLevel')
+      if (storedLevel && storedLevel !== 'beginner') {
+        window.location.href = '/dashboard'
+      }
     }
-    // 注意：不处理没有 NextAuth session 的情况（由 middleware 重定向）
   }, [status, session, router])
 
   const handleSubmit = async () => {
@@ -74,7 +80,10 @@ export default function OnboardingPage() {
         return
       }
 
-      router.push('/dashboard')
+      // 保存到 localStorage 以便下次快速跳转
+      localStorage.setItem('englishLevel', selectedLevel)
+      // 使用 window.location.href 确保页面完全刷新
+      window.location.href = '/dashboard'
     } catch {
       setError('发生错误，请重试')
       setIsLoading(false)

@@ -119,28 +119,21 @@ export default function DashboardPage() {
     setStreakLoading(false)
   }, [])
 
-  // 信任 middleware 的认证检查，只在 NextAuth session 准备好时获取数据
+  // 简化认证检查：信任 middleware 的认证
+  // 只要页面能加载到这里，说明已经通过认证
   useEffect(() => {
-    // 只在 session 准备好时加载数据
-    // 认证检查由 middleware 处理
-    if (status === 'authenticated') {
+    // 检查是否有 user-id cookie（确认用户已登录）
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    if (userIdCookie || status === 'authenticated') {
+      console.log('[Dashboard] 用户已认证，开始加载数据...')
       fetchDiaries()
       fetchStreak()
     } else if (status === 'unauthenticated') {
-      // 如果没有 NextAuth session，检查是否有自定义的 user-id cookie
-      // 使用 setTimeout 延迟检查，确保 cookie 已经设置
-      const timer = setTimeout(() => {
-        const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-        if (userIdCookie) {
-          // 有 user-id cookie，直接加载数据（不重定向）
-          fetchDiaries()
-          fetchStreak()
-        }
-      }, 100)
-      
-      return () => clearTimeout(timer)
+      console.log('[Dashboard] 用户未认证，重定向到登录页...')
+      router.push('/login')
     }
-  }, [status, fetchDiaries, fetchStreak])
+  }, [status, fetchDiaries, fetchStreak, router])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
