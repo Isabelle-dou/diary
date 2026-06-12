@@ -88,7 +88,7 @@ export async function POST(
     }
 
     // Get user's English level
-    const userLevel = diary.user.englishLevel || session.user.englishLevel || 'beginner'
+    const userLevel = diary.user.englishLevel || 'beginner'
     console.log(`[API POST /api/diaries/${id}/analyze] User level: ${userLevel}`)
 
     // Call AI analyzer
