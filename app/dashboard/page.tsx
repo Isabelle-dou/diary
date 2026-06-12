@@ -120,12 +120,17 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    // 检查是否有自定义的 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 如果没有 NextAuth session，也没有 user-id cookie，重定向到登录页
+    if (status === 'unauthenticated' && !userIdCookie) {
       router.push('/login')
       return
     }
 
-    if (status === 'authenticated') {
+    // 如果有 session 或者有 user-id cookie，就加载数据
+    if (status === 'authenticated' || userIdCookie) {
       fetchDiaries()
       fetchStreak()
     }

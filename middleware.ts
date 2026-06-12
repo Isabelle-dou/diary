@@ -44,10 +44,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (pathname === '/onboarding' && token.englishLevel !== 'beginner') {
-      const dashboardUrl = new URL('/dashboard', request.url)
-      return NextResponse.redirect(dashboardUrl)
-    }
+    // 注意：不再根据 englishLevel 进行重定向
+    // 因为 middleware 中的 token.englishLevel 是临时值，可能不准确
+    // 让前端页面自己处理级别判断和跳转
   }
 
   const authPaths = ['/login', '/register']

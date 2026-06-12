@@ -40,11 +40,16 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    // 检查是否有自定义的 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 如果没有 NextAuth session，也没有 user-id cookie，重定向到登录页
+    if (status === 'unauthenticated' && !userIdCookie) {
       router.push('/login')
       return
     }
 
+    // 如果有 session 且用户级别不是 beginner，重定向到 dashboard
     if (status === 'authenticated' && session?.user?.englishLevel !== 'beginner') {
       router.push('/dashboard')
     }
