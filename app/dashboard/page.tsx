@@ -119,22 +119,28 @@ export default function DashboardPage() {
     setStreakLoading(false)
   }, [])
 
+  // 信任 middleware 的认证检查，只在 NextAuth session 准备好时获取数据
   useEffect(() => {
-    // 检查是否有自定义的 user-id cookie
-    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-    
-    // 如果没有 NextAuth session，也没有 user-id cookie，重定向到登录页
-    if (status === 'unauthenticated' && !userIdCookie) {
-      router.push('/login')
-      return
-    }
-
-    // 如果有 session 或者有 user-id cookie，就加载数据
-    if (status === 'authenticated' || userIdCookie) {
+    // 只在 session 准备好时加载数据
+    // 认证检查由 middleware 处理
+    if (status === 'authenticated') {
       fetchDiaries()
       fetchStreak()
+    } else if (status === 'unauthenticated') {
+      // 如果没有 NextAuth session，检查是否有自定义的 user-id cookie
+      // 使用 setTimeout 延迟检查，确保 cookie 已经设置
+      const timer = setTimeout(() => {
+        const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+        if (userIdCookie) {
+          // 有 user-id cookie，直接加载数据（不重定向）
+          fetchDiaries()
+          fetchStreak()
+        }
+      }, 100)
+      
+      return () => clearTimeout(timer)
     }
-  }, [status, router, fetchDiaries, fetchStreak])
+  }, [status, fetchDiaries, fetchStreak])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)

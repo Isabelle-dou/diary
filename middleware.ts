@@ -19,19 +19,14 @@ export async function middleware(request: NextRequest) {
   })
 
   // 如果没有 NextAuth token，尝试使用自定义的 user-id cookie
+  // 只要 cookie 存在，就认为是已认证用户
   if (!token) {
     const userIdCookie = request.cookies.get('user-id')
-    if (userIdCookie && userIdCookie.value) {
-      try {
-        // 使用 Response 对象传递用户信息，避免在 middleware 中直接查询数据库
-        token = {
-          id: userIdCookie.value,
-          email: 'user@example.com', // 临时占位，实际 email 在页面中获取
-          englishLevel: 'beginner', // 临时占位，实际 level 在页面中获取
-        } as any
-      } catch (error) {
-        console.error('[Middleware] Error verifying user cookie:', error)
-      }
+    if (userIdCookie?.value) {
+      // 只要 user-id cookie 存在，就创建一个简单的 token 对象
+      token = {
+        id: userIdCookie.value,
+      } as any
     }
   }
 
@@ -43,18 +38,15 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/login', request.url)
       return NextResponse.redirect(loginUrl)
     }
-
-    // 注意：不再根据 englishLevel 进行重定向
-    // 因为 middleware 中的 token.englishLevel 是临时值，可能不准确
-    // 让前端页面自己处理级别判断和跳转
   }
 
   const authPaths = ['/login', '/register']
   const isAuthPath = authPaths.some(path => pathname === path)
 
   if (isAuthPath && token) {
-    // 注意：这里需要实际的用户级别信息才能正确跳转
-    // 暂时不重定向已登录用户，让他们自己选择
+    // 已登录用户访问登录页，重定向到 dashboard
+    const dashboardUrl = new URL('/dashboard', request.url)
+    return NextResponse.redirect(dashboardUrl)
   }
 
   return NextResponse.next()

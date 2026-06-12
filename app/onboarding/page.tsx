@@ -39,20 +39,14 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // 信任 middleware 的认证检查，只在 NextAuth session 准备好时处理
   useEffect(() => {
-    // 检查是否有自定义的 user-id cookie
-    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-    
-    // 如果没有 NextAuth session，也没有 user-id cookie，重定向到登录页
-    if (status === 'unauthenticated' && !userIdCookie) {
-      router.push('/login')
-      return
-    }
-
-    // 如果有 session 且用户级别不是 beginner，重定向到 dashboard
+    // 认证检查由 middleware 处理
+    // 只在有 NextAuth session 时检查用户级别
     if (status === 'authenticated' && session?.user?.englishLevel !== 'beginner') {
       router.push('/dashboard')
     }
+    // 注意：不处理没有 NextAuth session 的情况（由 middleware 重定向）
   }, [status, session, router])
 
   const handleSubmit = async () => {
