@@ -222,9 +222,9 @@ export default function LoginPage() {
       console.log('[Login] Email:', formData.email)
       console.log('[Login] Password length:', formData.password.length)
 
-      // 直接使用备用登录API，完全绕过 NextAuth
-      console.log('[Login] Calling direct login API...')
-      const directLoginResult = await fetch('/api/direct-login', {
+      // 直接使用备用登录API，完全绕过 NextAuth（带超时控制）
+      console.log('[Login] Calling direct login API with timeout...')
+      const directLoginResult = await fetchWithTimeout('/api/direct-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -233,7 +233,7 @@ export default function LoginPage() {
           email: formData.email,
           password: formData.password,
         }),
-      })
+      }, 10000)
       
       console.log('[Login] Direct login response status:', directLoginResult.status)
       
