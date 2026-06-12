@@ -54,12 +54,15 @@ export async function POST(request: Request) {
     }, { status: 200 })
 
     // 使用 response.cookies.set() 来设置 cookie（API Route 的正确方式）
+    // 注意：在 Vercel 生产环境中，secure 会自动处理
+    // 使用 lax 而不是 strict 来确保在导航时能正确传递
     response.cookies.set('user-id', user.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 24 * 60 * 60,
       path: '/',
+      domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined,
     })
     
     console.log('[Direct Login] 步骤4完成: Cookie已设置')
