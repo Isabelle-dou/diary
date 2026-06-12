@@ -197,13 +197,15 @@ export default function WriteDiaryPage() {
   }, [content, title, saveDraft])
 
   /**
-   * 认证状态检查
+   * 认证状态检查 - 使用 user-id cookie 而不是 NextAuth status
    */
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-    }
-  }, [status, router])
+    // 检查是否有 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 如果没有 cookie，middleware 会处理重定向
+    // 这里不需要做任何事
+  }, [])
 
   /**
    * 提交日记

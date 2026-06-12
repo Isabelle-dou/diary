@@ -1,20 +1,30 @@
 'use client'
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function NewDiaryPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isReady, setIsReady] = useState(false)
 
-  if (status === 'unauthenticated') {
-    router.push('/login')
+  // 检查认证状态
+  useEffect(() => {
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    if (!userIdCookie) {
+      // 如果没有 cookie，middleware 会处理重定向
+      return
+    }
+    
+    setIsReady(true)
+  }, [])
+
+  if (!isReady) {
     return null
   }
 

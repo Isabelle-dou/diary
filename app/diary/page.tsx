@@ -30,15 +30,15 @@ export default function DiaryListPage() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status === 'authenticated') {
+    // 检查是否有 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
+    if (userIdCookie) {
       fetchDiaries()
     }
-  }, [status, router])
+    // 如果没有 cookie，middleware 会处理重定向
+  }, [])
 
   const fetchDiaries = async () => {
     try {

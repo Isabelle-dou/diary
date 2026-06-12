@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const protectedPaths = ['/onboarding', '/dashboard', '/diary', '/write']
+  const protectedPaths = ['/onboarding', '/dashboard', '/diary', '/write', '/collection']
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
 
   if (isProtectedPath) {

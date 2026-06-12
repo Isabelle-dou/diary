@@ -33,15 +33,15 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status === 'authenticated') {
+    // 检查是否有 user-id cookie
+    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    
+    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
+    if (userIdCookie) {
       fetchReportData()
     }
-  }, [status, router, period, customStartDate, customEndDate])
+    // 如果没有 cookie，middleware 会处理重定向
+  }, [period, customStartDate, customEndDate])
 
   const fetchReportData = async () => {
     setLoading(true)
