@@ -198,7 +198,22 @@ export default function LoginPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    console.info('[Login] ====== handleSubmit 被调用 ======')
+    console.info('[Login] 事件对象:', e)
+    
+    // 尝试阻止默认行为
+    try {
+      e.preventDefault()
+      console.log('[Login] e.preventDefault() 已调用')
+    } catch (error) {
+      console.error('[Login] 阻止默认行为失败:', error)
+    }
+
+    // 强制阻止表单提交
+    if (e.nativeEvent) {
+      e.nativeEvent.preventDefault?.()
+      console.log('[Login] nativeEvent.preventDefault() 已调用')
+    }
 
     // 强制输出日志（确保能在控制台看到）
     const startTime = Date.now()
@@ -244,6 +259,9 @@ export default function LoginPage() {
       console.log('[Login] 响应状态:', directLoginResult.status)
       console.log('[Login] 响应状态文本:', directLoginResult.statusText)
       
+      console.log('[Login] API 响应状态:', directLoginResult.status)
+      console.log('[Login] API 响应状态文本:', directLoginResult.statusText)
+      
       if (directLoginResult.ok) {
         console.log('[Login] 响应成功，解析 JSON...')
         const data = await directLoginResult.json()
@@ -255,7 +273,9 @@ export default function LoginPage() {
           console.log('[Login] 准备跳转到:', targetPath)
           
           // 使用 window.location.href 进行跳转，避免 router.push 导致的刷新问题
+          console.log('[Login] 即将执行跳转...')
           setTimeout(() => {
+            console.log('[Login] 执行跳转:', targetPath)
             window.location.href = targetPath
           }, 100)
           return
@@ -272,6 +292,7 @@ export default function LoginPage() {
         setIsLoading(false)
         console.info('[Login] ====== 登录流程结束（备用登录失败） ======')
       }
+      console.log('[Login] 登录流程正常结束')
       return
     } catch (error) {
       console.error('[Login] ====== 登录流程异常结束 ======')
