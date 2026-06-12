@@ -12,11 +12,23 @@ export async function GET(
   console.log(`[API GET /api/diaries/${id}] Request received`)
   
   try {
-    console.log(`[API GET /api/diaries/${id}] Step 1: Getting session`)
+    console.log(`[API GET /api/diaries/${id}] Step 1: Getting session or cookie`)
     const session = await getServerSession(authOptions)
-    console.log(`[API GET /api/diaries/${id}] Session:`, session ? 'Authenticated' : 'Not authenticated')
+    
+    // 首先尝试从 NextAuth session 获取用户 ID
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+        console.log(`[API GET /api/diaries/${id}] Using user-id cookie: ${userId}`)
+      }
+    }
 
-    if (!session?.user?.id) {
+    console.log(`[API GET /api/diaries/${id}] Session/Cookie:`, userId ? 'Authenticated' : 'Not authenticated')
+
+    if (!userId) {
       console.log(`[API GET /api/diaries/${id}] Error: Unauthorized`)
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
@@ -43,7 +55,7 @@ export async function GET(
       )
     }
 
-    if (diary.userId !== session.user.id) {
+    if (diary.userId !== userId) {
       console.log(`[API GET /api/diaries/${id}] Error: Forbidden - user mismatch`)
       return NextResponse.json(
         { error: '无权访问此日记' },
@@ -95,11 +107,22 @@ export async function PUT(
   console.log(`[API PUT /api/diaries/${id}] Request received`)
   
   try {
-    console.log(`[API PUT /api/diaries/${id}] Step 1: Getting session`)
+    console.log(`[API PUT /api/diaries/${id}] Step 1: Getting session or cookie`)
     const session = await getServerSession(authOptions)
-    console.log(`[API PUT /api/diaries/${id}] Session:`, session ? 'Authenticated' : 'Not authenticated')
+    
+    // 首先尝试从 NextAuth session 获取用户 ID
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    console.log(`[API PUT /api/diaries/${id}] Session/Cookie:`, userId ? 'Authenticated' : 'Not authenticated')
+
+    if (!userId) {
       console.log(`[API PUT /api/diaries/${id}] Error: Unauthorized`)
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
@@ -132,7 +155,7 @@ export async function PUT(
       )
     }
 
-    if (diary.userId !== session.user.id) {
+    if (diary.userId !== userId) {
       console.log(`[API PUT /api/diaries/${id}] Error: Forbidden - user mismatch`)
       return NextResponse.json(
         { error: '无权修改此日记' },
@@ -181,9 +204,25 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log(`[API DELETE /api/diaries/${params.id}] Request received`)
+    console.log(`[API DELETE /api/diaries/${params.id}] Step 1: Getting session or cookie`)
+    
     const session = await getServerSession(authOptions)
+    
+    // 首先尝试从 NextAuth session 获取用户 ID
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    console.log(`[API DELETE /api/diaries/${params.id}] Session/Cookie:`, userId ? 'Authenticated' : 'Not authenticated')
+
+    if (!userId) {
+      console.log(`[API DELETE /api/diaries/${params.id}] Error: Unauthorized`)
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -195,13 +234,15 @@ export async function DELETE(
     })
 
     if (!diary) {
+      console.log(`[API DELETE /api/diaries/${params.id}] Error: Diary not found`)
       return NextResponse.json(
         { error: '日记不存在' },
         { status: 404 }
       )
     }
 
-    if (diary.userId !== session.user.id) {
+    if (diary.userId !== userId) {
+      console.log(`[API DELETE /api/diaries/${params.id}] Error: Forbidden - user mismatch`)
       return NextResponse.json(
         { error: '无权删除此日记' },
         { status: 403 }

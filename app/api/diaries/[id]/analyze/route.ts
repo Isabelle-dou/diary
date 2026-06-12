@@ -14,11 +14,23 @@ export async function POST(
   
   try {
     // Verify user authentication
-    console.log(`[API POST /api/diaries/${id}/analyze] Step 1: Getting session`)
+    console.log(`[API POST /api/diaries/${id}/analyze] Step 1: Getting session or cookie`)
     const session = await getServerSession(authOptions)
-    console.log(`[API POST /api/diaries/${id}/analyze] Session:`, session ? 'Authenticated' : 'Not authenticated')
+    
+    // 首先尝试从 NextAuth session 获取用户 ID
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+        console.log(`[API POST /api/diaries/${id}/analyze] Using user-id cookie: ${userId}`)
+      }
+    }
 
-    if (!session?.user?.id) {
+    console.log(`[API POST /api/diaries/${id}/analyze] Session/Cookie:`, userId ? 'Authenticated' : 'Not authenticated')
+
+    if (!userId) {
       console.log(`[API POST /api/diaries/${id}/analyze] Error: Unauthorized`)
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
@@ -41,7 +53,7 @@ export async function POST(
       )
     }
 
-    if (diary.userId !== session.user.id) {
+    if (diary.userId !== userId) {
       console.log(`[API POST /api/diaries/${id}/analyze] Error: Forbidden - user mismatch`)
       return NextResponse.json(
         { error: '无权访问此日记' },

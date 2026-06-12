@@ -30,9 +30,19 @@ function stringifyAvatarHistory(history: string[]): string {
  */
 export async function POST(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -88,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     // 获取当前用户的头像历史
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { avatar: true, avatarHistory: true },
     })
 
@@ -110,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // 更新用户资料
     const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: {
         avatar: avatarUrl,
         avatarHistory: stringifyAvatarHistory(newHistory),
@@ -148,9 +158,19 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -158,7 +178,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { avatar: true, avatarHistory: true },
     })
 
@@ -198,9 +218,19 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -218,7 +248,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { avatar: true, avatarHistory: true },
     })
 
@@ -242,7 +272,7 @@ export async function DELETE(request: NextRequest) {
     const updatedHistory = existingHistory.filter((h) => h !== url)
 
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: { avatarHistory: stringifyAvatarHistory(updatedHistory) },
     })
 

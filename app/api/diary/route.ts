@@ -6,9 +6,19 @@ import { updateStreak } from '@/lib/streak'
 
 export async function POST(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -31,7 +41,7 @@ export async function POST(request: NextRequest) {
     
     const diary = await prisma.diary.create({
       data: {
-        userId: session.user.id,
+        userId,
         title: title || 'Untitled',
         content,
         date: writingDate,
@@ -40,7 +50,7 @@ export async function POST(request: NextRequest) {
     })
 
     // 更新写作连续天数
-    await updateStreak(session.user.id, writingDate)
+    await updateStreak(userId, writingDate)
 
     return NextResponse.json(
       { message: 'Diary created successfully', diary },
@@ -55,11 +65,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -67,7 +87,7 @@ export async function GET() {
     }
 
     const diaries = await prisma.diary.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       orderBy: { date: 'desc' },
       include: { aiAnalysis: true },
     })

@@ -5,9 +5,19 @@ import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -38,7 +48,7 @@ export async function GET(request: NextRequest) {
     // 获取该时间段内的日记和分析数据
     const diaries = await prisma.diary.findMany({
       where: {
-        userId: session.user.id,
+        userId,
         date: {
           gte: start,
           lte: end

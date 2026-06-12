@@ -11,9 +11,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session || !session.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '请先登录' },
         { status: 401 }
@@ -35,7 +45,7 @@ export async function DELETE(
     }
 
     // 检查权限
-    if (collection.userId !== session.user.id) {
+    if (collection.userId !== userId) {
       return NextResponse.json(
         { error: '无权删除此收藏' },
         { status: 403 }
