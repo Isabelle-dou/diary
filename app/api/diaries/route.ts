@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         take: PAGE_SIZE,
       }),
       prisma.diary.count({
-        where: { userId: session.user.id },
+        where: { userId },
       }),
     ])
 
