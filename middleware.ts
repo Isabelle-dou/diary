@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // 跳过 API 路由
-  if (pathname.startsWith('/api/')) {
+  // 跳过 API 路由和静态资源
+  if (pathname.startsWith('/api/') || 
+      pathname.startsWith('/_next/') || 
+      pathname.startsWith('/static/') ||
+      pathname.match(/\.(png|jpg|jpeg|gif|ico|svg|css|js)$/)) {
     return NextResponse.next()
   }
 
@@ -19,14 +22,13 @@ export async function middleware(request: NextRequest) {
   // 如果没有 NextAuth token，尝试使用自定义的 user-id cookie
   if (!token) {
     const userIdCookie = request.cookies.get('user-id')
-    if (userIdCookie) {
-      console.log('[Middleware] Found user-id cookie:', userIdCookie.value)
+    if (userIdCookie && userIdCookie.value) {
       try {
         const user = await prisma.user.findUnique({
           where: { id: userIdCookie.value },
+          select: { id: true, email: true, englishLevel: true },
         })
         if (user) {
-          console.log('[Middleware] User found from cookie:', user.email)
           token = {
             userId: user.id,
             email: user.email,
@@ -34,7 +36,7 @@ export async function middleware(request: NextRequest) {
           }
         }
       } catch (error) {
-        console.error('[Middleware] Error fetching user from cookie:', error)
+        console.error('[Middleware] Error verifying user cookie:', error)
       }
     }
   }
@@ -44,13 +46,11 @@ export async function middleware(request: NextRequest) {
 
   if (isProtectedPath) {
     if (!token) {
-      console.log('[Middleware] No token found, redirecting to login')
       const loginUrl = new URL('/login', request.url)
       return NextResponse.redirect(loginUrl)
     }
 
     if (pathname === '/onboarding' && token.englishLevel !== 'beginner') {
-      console.log('[Middleware] User has level, redirecting to dashboard')
       const dashboardUrl = new URL('/dashboard', request.url)
       return NextResponse.redirect(dashboardUrl)
     }
@@ -60,7 +60,6 @@ export async function middleware(request: NextRequest) {
   const isAuthPath = authPaths.some(path => pathname === path)
 
   if (isAuthPath && token) {
-    console.log('[Middleware] User already authenticated, redirecting')
     if (token.englishLevel === 'beginner') {
       const onboardingUrl = new URL('/onboarding', request.url)
       return NextResponse.redirect(onboardingUrl)
