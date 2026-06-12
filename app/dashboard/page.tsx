@@ -74,18 +74,29 @@ export default function DashboardPage() {
   }
 
   const fetchDiaries = useCallback(async (page: number = 1) => {
+    console.log('[Dashboard-fetchDiaries] 开始加载第', page, '页')
+    console.log('[Dashboard-fetchDiaries] 当前 cookies:', document.cookie)
+    console.log('[Dashboard-fetchDiaries] user-id cookie 存在:', document.cookie.includes('user-id='))
+    
     try {
       const response = await fetch(`/api/diaries?page=${page}`, {
         credentials: 'include',
       })
+      
+      console.log('[Dashboard-fetchDiaries] API 响应状态:', response.status)
+      console.log('[Dashboard-fetchDiaries] API 响应 OK:', response.ok)
+      
       const data = await response.json()
-
+      
       if (!response.ok) {
+        console.error('[Dashboard-fetchDiaries] API 返回错误:', data)
         showToast(data.error || '获取日记列表失败', 'error')
         setIsLoading(false)
         return
       }
 
+      console.log('[Dashboard-fetchDiaries] 数据加载成功:', data.diaries.length, '条记录')
+      
       if (page === 1) {
         setDiaries(data.diaries)
       } else {
@@ -97,40 +108,62 @@ export default function DashboardPage() {
         totalPages: data.totalPages,
       })
       setIsLoading(false)
+      console.log('[Dashboard-fetchDiaries] 加载完成，isLoading 设置为 false')
     } catch (error) {
+      console.error('[Dashboard-fetchDiaries] 捕获异常:', error)
       showToast('获取日记列表发生错误', 'error')
       setIsLoading(false)
     }
   }, [showToast])
 
   const fetchStreak = useCallback(async () => {
+    console.log('[Dashboard-fetchStreak] 开始加载 streak 数据')
+    console.log('[Dashboard-fetchStreak] 当前 cookies:', document.cookie)
+    
     setStreakLoading(true)
     try {
       const response = await fetch('/api/stats/streak', {
         credentials: 'include',
       })
+      
+      console.log('[Dashboard-fetchStreak] API 响应状态:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
         setStreakData(data)
+        console.log('[Dashboard-fetchStreak] streak 数据加载成功:', data)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[Dashboard-fetchStreak] API 返回错误:', errorData)
       }
     } catch (error) {
-      console.error('获取 streak 数据失败:', error)
+      console.error('[Dashboard-fetchStreak] 捕获异常:', error)
     }
     setStreakLoading(false)
+    console.log('[Dashboard-fetchStreak] 加载完成')
   }, [])
 
   // 简化认证检查：信任 middleware 的认证
   // 只要页面能加载到这里，说明已经通过认证
   // 不再检查 NextAuth status，因为我们使用自定义 cookie 认证
   useEffect(() => {
+    console.log('[Dashboard-AuthCheck] ====== 认证检查开始 ======')
+    console.log('[Dashboard-AuthCheck] NextAuth status:', status)
+    console.log('[Dashboard-AuthCheck] NextAuth session:', session)
+    
     // 检查是否有 user-id cookie（确认用户已登录）
     const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
+    console.log('[Dashboard-AuthCheck] user-id cookie 存在:', !!userIdCookie)
+    console.log('[Dashboard-AuthCheck] user-id cookie 值:', userIdCookie)
+    console.log('[Dashboard-AuthCheck] 所有 cookies:', document.cookie)
     
     // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
     if (userIdCookie) {
+      console.log('[Dashboard-AuthCheck] 用户已认证（user-id cookie），开始加载数据...')
       fetchDiaries()
       fetchStreak()
     } else {
+      console.log('[Dashboard-AuthCheck] 用户未认证（无 cookie），等待 middleware 重定向...')
       // 如果没有 cookie，说明真的未认证
       // 注意：不再主动重定向，由 middleware 处理
     }
