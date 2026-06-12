@@ -144,12 +144,11 @@ export default function LoginPage() {
 
       console.log('[Login] Simple login successful! User:', data.user)
       
-      // 根据用户级别跳转
-      if (data.user.hasSetLevel) {
-        router.push('/dashboard')
-      } else {
-        router.push('/onboarding')
-      }
+      // 根据用户级别跳转，使用 window.location.href 避免刷新问题
+      const targetPath = data.user.hasSetLevel ? '/dashboard' : '/onboarding'
+      setTimeout(() => {
+        window.location.href = targetPath
+      }, 100)
     } catch (error) {
       console.error('[Login] Simple login error:', error)
       showToast('登录失败: ' + (error instanceof Error ? error.message : '未知错误'), 'error')
@@ -255,9 +254,9 @@ export default function LoginPage() {
           const targetPath = data.user.hasSetLevel ? '/dashboard' : '/onboarding'
           console.log('[Login] 准备跳转到:', targetPath)
           
-          // 使用 setTimeout 确保 cookie 已经设置
+          // 使用 window.location.href 进行跳转，避免 router.push 导致的刷新问题
           setTimeout(() => {
-            router.push(targetPath)
+            window.location.href = targetPath
           }, 100)
           return
         } else {
