@@ -223,7 +223,11 @@ export default function LoginPage() {
       console.log('[Login] Password length:', formData.password.length)
 
       // 直接使用备用登录API，完全绕过 NextAuth（带超时控制）
-      console.log('[Login] Calling direct login API with timeout...')
+      console.log('[Login] ====== 调用 Direct Login API ======')
+      console.log('[Login] API URL:', '/api/direct-login')
+      console.log('[Login] 请求体:', JSON.stringify({ email: formData.email, password: '***' }))
+      
+      const apiStartTime = Date.now()
       const directLoginResult = await fetchWithTimeout('/api/direct-login', {
         method: 'POST',
         headers: {
@@ -235,20 +239,36 @@ export default function LoginPage() {
         }),
       }, 10000)
       
-      console.log('[Login] Direct login response status:', directLoginResult.status)
+      const apiDuration = Date.now() - apiStartTime
+      console.log('[Login] ====== Direct Login API 响应 ======')
+      console.log('[Login] API 耗时:', apiDuration, 'ms')
+      console.log('[Login] 响应状态:', directLoginResult.status)
+      console.log('[Login] 响应状态文本:', directLoginResult.statusText)
       
       if (directLoginResult.ok) {
+        console.log('[Login] 响应成功，解析JSON...')
         const data = await directLoginResult.json()
-        console.log('[Login] Direct login successful:', data)
-        if (data.user.hasSetLevel) {
-          router.push('/dashboard')
+        console.log('[Login] Direct login successful:', JSON.stringify(data))
+        
+        if (data.user && data.user.hasSetLevel !== undefined) {
+          console.log('[Login] 用户级别已设置:', data.user.hasSetLevel)
+          if (data.user.hasSetLevel) {
+            console.log('[Login] 跳转到 /dashboard')
+            router.push('/dashboard')
+          } else {
+            console.log('[Login] 跳转到 /onboarding')
+            router.push('/onboarding')
+          }
         } else {
-          router.push('/onboarding')
+          console.error('[Login] 用户数据不完整:', data)
+          showToast('登录失败：用户数据不完整', 'error')
+          setIsLoading(false)
         }
         return
       } else {
+        console.log('[Login] 响应失败，解析错误信息...')
         const errorData = await directLoginResult.json().catch(() => ({ message: '登录失败' }))
-        console.error('[Login] Direct login failed:', errorData)
+        console.error('[Login] Direct login failed:', JSON.stringify(errorData))
         showToast(errorData.message || '登录失败，请重试', 'error')
         setIsLoading(false)
         console.info('[Login] ====== 登录流程结束（备用登录失败） ======')
