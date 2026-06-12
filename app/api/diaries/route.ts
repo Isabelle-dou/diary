@@ -8,9 +8,19 @@ const PAGE_SIZE = 20
 
 export async function GET(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -23,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const [diaries, total] = await Promise.all([
       prisma.diary.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         orderBy: { date: 'desc' },
         include: {
           aiAnalysis: true,
@@ -64,9 +74,19 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
 
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问' },
         { status: 401 }
@@ -87,7 +107,7 @@ export async function POST(request: NextRequest) {
 
     const diary = await prisma.diary.create({
       data: {
-        userId: session.user.id,
+        userId,
         title: title || '无标题',
         content,
         date: date ? new Date(date) : new Date(),
