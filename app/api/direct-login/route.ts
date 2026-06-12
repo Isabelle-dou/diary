@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcryptjs from 'bcryptjs'
-import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   const startTime = Date.now()
@@ -41,20 +40,9 @@ export async function POST(request: Request) {
     }
 
     console.log('[Direct Login] 步骤4: 设置 Cookie...')
-    cookies().set('user-id', user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60,
-      path: '/',
-    })
-    console.log('[Direct Login] 步骤4完成: Cookie已设置')
-
-    const duration = Date.now() - startTime
-    console.log('[Direct Login] ====== API 调用成功 ======')
-    console.log('[Direct Login] 耗时:', duration, 'ms')
-
-    return NextResponse.json({
+    
+    // 创建响应并设置 cookie
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -64,6 +52,23 @@ export async function POST(request: Request) {
         hasSetLevel: user.englishLevel !== 'beginner',
       },
     }, { status: 200 })
+
+    // 使用 response.cookies.set() 来设置 cookie（API Route 的正确方式）
+    response.cookies.set('user-id', user.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60,
+      path: '/',
+    })
+    
+    console.log('[Direct Login] 步骤4完成: Cookie已设置')
+
+    const duration = Date.now() - startTime
+    console.log('[Direct Login] ====== API 调用成功 ======')
+    console.log('[Direct Login] 耗时:', duration, 'ms')
+
+    return response
 
   } catch (error) {
     const duration = Date.now() - startTime
