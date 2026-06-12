@@ -90,7 +90,9 @@ export default function OnboardingPage() {
     }
   }
 
-  if (status === 'loading') {
+  // 只根据 isLoading 状态显示加载中，不依赖 NextAuth status
+  // 因为我们使用的是自定义 cookie 认证
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="flex items-center gap-3">

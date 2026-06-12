@@ -162,7 +162,9 @@ export default function DashboardPage() {
     }
   }
 
-  if (status === 'loading' || (isLoading && diaries.length === 0)) {
+  // 只根据 isLoading 状态显示加载中，不依赖 NextAuth status
+  // 因为我们使用的是自定义 cookie 认证
+  if (isLoading && diaries.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex items-center gap-3">
