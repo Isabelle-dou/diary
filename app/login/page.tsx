@@ -238,10 +238,13 @@ export default function LoginPage() {
 
       // 直接使用备用登录API，完全绕过 NextAuth（带超时控制）
       console.log('[Login] ====== 调用 Direct Login API ======')
-      console.log('[Login] API URL:', '/api/direct-login')
+      console.log('[Login] API URL:', window.location.origin + '/api/direct-login')
       console.log('[Login] 请求体:', JSON.stringify({ email: formData.email, password: '***' }))
+      console.log('[Login] 当前 cookies:', document.cookie)
       
       const apiStartTime = Date.now()
+      console.log('[Login] 开始发送 fetch 请求...')
+      
       const directLoginResult = await fetchWithTimeout('/api/direct-login', {
         method: 'POST',
         headers: {
@@ -251,6 +254,7 @@ export default function LoginPage() {
           email: formData.email,
           password: formData.password,
         }),
+        credentials: 'include',  // 确保发送和接收 cookies
       }, 10000)
       
       const apiDuration = Date.now() - apiStartTime
@@ -262,10 +266,19 @@ export default function LoginPage() {
       console.log('[Login] API 响应状态:', directLoginResult.status)
       console.log('[Login] API 响应状态文本:', directLoginResult.statusText)
       
+      // 检查响应 headers 中的 set-cookie
+      const setCookieHeader = directLoginResult.headers.get('set-cookie')
+      console.log('[Login] 响应 Set-Cookie:', setCookieHeader)
+      
       if (directLoginResult.ok) {
         console.log('[Login] 响应成功，解析 JSON...')
         const data = await directLoginResult.json()
         console.log('[Login] Direct login successful:', JSON.stringify(data))
+        
+        // 检查当前 cookies（验证是否设置成功）
+        setTimeout(() => {
+          console.log('[Login] 设置后的 cookies:', document.cookie)
+        }, 50)
         
         if (data.user && data.user.hasSetLevel !== undefined) {
           console.log('[Login] 用户级别已设置:', data.user.hasSetLevel)
