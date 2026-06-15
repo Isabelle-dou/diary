@@ -34,13 +34,12 @@ export const authOptions: NextAuthOptions = {
         console.log('[NextAuth] ====== Authorize 开始 ======')
         console.log('[NextAuth] Authorize called with email:', credentials?.email)
         console.log('[NextAuth] Credentials received:', credentials ? 'Yes' : 'No')
+        console.log('[NextAuth] Refresh mode:', credentials?.refresh === 'true')
 
         try {
-          if (!credentials?.email || !credentials?.password) {
-            console.log('[NextAuth] Missing credentials')
-            console.log('[NextAuth] Email provided:', !!credentials?.email)
-            console.log('[NextAuth] Password provided:', !!credentials?.password)
-            console.log('[NextAuth] ====== Authorize 结束（缺少凭证） ======')
+          if (!credentials?.email) {
+            console.log('[NextAuth] Missing email')
+            console.log('[NextAuth] ====== Authorize 结束（缺少邮箱） ======')
             return null
           }
 
@@ -56,6 +55,28 @@ export const authOptions: NextAuthOptions = {
           if (!user) {
             console.log('[NextAuth] User not found:', credentials.email)
             console.log('[NextAuth] ====== Authorize 结束（用户不存在） ======')
+            return null
+          }
+
+          // 如果是刷新模式（refresh=true），跳过密码验证
+          // 这用于用户更新profile后刷新session
+          if (credentials?.refresh === 'true') {
+            console.log('[NextAuth] Refresh mode: skipping password check')
+            console.log('[NextAuth] Session refreshed for user:', user.id)
+            console.log('[NextAuth] ====== Authorize 结束（刷新模式） ======')
+            return {
+              id: user.id,
+              email: user.email,
+              displayName: user.displayName ?? undefined,
+              avatar: user.avatar ?? undefined,
+              englishLevel: user.englishLevel,
+            }
+          }
+
+          // 正常登录模式：需要密码验证
+          if (!credentials?.password) {
+            console.log('[NextAuth] Missing password in normal login mode')
+            console.log('[NextAuth] ====== Authorize 结束（缺少密码） ======')
             return null
           }
 
@@ -88,7 +109,6 @@ export const authOptions: NextAuthOptions = {
 
           if (!passwordMatch) {
             console.log('[NextAuth] Password does not match')
-            // 调试：打印部分哈希值用于对比
             console.log('[NextAuth] Stored hash (first 20 chars):', user.hashedPassword.substring(0, 20))
             console.log('[NextAuth] ====== Authorize 结束（密码不匹配） ======')
             return null

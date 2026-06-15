@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signIn } from 'next-auth/react'
 
 interface UserSettingsModalProps {
   isOpen: boolean
@@ -114,15 +114,16 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         return
       }
 
-      await update({
-        ...session,
-        user: {
-          ...session?.user,
-          displayName: result.user.displayName,
-          avatar: result.user.avatar,
-        },
+      // 使用signIn方法重新获取session，确保JWT token被更新
+      // 这会触发JWT callback并更新存储在浏览器中的token
+      // 使用refresh模式跳过密码验证
+      await signIn('credentials', {
+        email: session?.user?.email || '',
+        refresh: 'true',
+        redirect: false,
+        callbackUrl: '/',
       })
-      console.log('Session updated successfully')
+      console.log('Session refreshed successfully')
 
       setMessage('保存成功！')
       setTimeout(() => {
@@ -135,7 +136,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     }
 
     setIsLoading(false)
-  }, [displayName, avatar, session, update, onClose])
+  }, [displayName, avatar, session, signIn, onClose])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
