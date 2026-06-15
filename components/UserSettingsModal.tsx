@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 
 interface UserSettingsModalProps {
   isOpen: boolean
@@ -134,13 +134,10 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
               avatar: refreshResult.user.avatar,
             },
           })
-        } else {
-          // 如果session为null，强制刷新页面，让NextAuth重新初始化session
-          // 由于session callback从数据库获取最新信息，刷新后会显示最新的用户信息
-          setTimeout(() => {
-            window.location.reload()
-          }, 500)
         }
+        // 如果session不存在，不强制刷新页面
+        // 因为强制刷新会导致数据丢失（NextAuth session仍然为null）
+        // 用户信息已经保存到数据库，下次页面刷新时会从数据库读取
       } else {
         console.warn('Failed to refresh session')
         // 如果刷新失败且session存在，至少更新本地状态
