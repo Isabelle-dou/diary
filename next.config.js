@@ -10,7 +10,7 @@ const nextConfig = {
   output: 'standalone', // Enables standalone output for Docker/Kubernetes deployment
   images: {
     // Add image domains if you need to load images from external sources
-    domains: [],
+    domains: ['public.blob.vercel-storage.com'],
     // Enable modern image formats
     formats: ['image/avif', 'image/webp'],
   },

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import fs from 'fs'
+import { put, del, list } from '@vercel/blob'
 import path from 'path'
 
 /**
@@ -81,20 +81,18 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
 
     // 生成唯一文件名
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${file.type.split('/')[1]}`
-    const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', fileName)
-
-    // 确保目录存在
-    const dirPath = path.dirname(filePath)
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true })
-    }
-
-    // 保存文件
-    fs.writeFileSync(filePath, buffer)
-
-    // 构建访问URL
-    const avatarUrl = `/uploads/avatars/${fileName}`
+    const fileExtension = file.type.split('/')[1]
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
+    
+    // 使用 Vercel Blob 存储头像文件
+    // 路径格式: avatars/{userId}/{fileName}
+    const blobPath = `avatars/${userId}/${fileName}`
+    
+    // 上传到 Vercel Blob
+    const { url: avatarUrl } = await put(blobPath, buffer, {
+      access: 'public',
+      contentType: file.type,
+    })
 
     // 获取当前用户的头像历史
     const user = await prisma.user.findUnique({
@@ -270,6 +268,16 @@ export async function DELETE(request: NextRequest) {
     // 解析并从历史记录中移除
     const existingHistory = parseAvatarHistory(user.avatarHistory)
     const updatedHistory = existingHistory.filter((h) => h !== url)
+
+    // 从 Vercel Blob 中删除文件
+    try {
+      // 提取 Blob 路径（从 URL 中提取）
+      const blobPath = new URL(url).pathname.substring(1) // 移除开头的 '/'
+      await del(blobPath)
+    } catch (deleteError) {
+      console.warn('删除 Blob 文件失败:', deleteError)
+      // 删除失败不阻止数据库更新
+    }
 
     await prisma.user.update({
       where: { id: userId },
