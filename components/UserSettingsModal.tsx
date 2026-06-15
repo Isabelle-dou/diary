@@ -164,7 +164,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     }
 
     setIsLoading(false)
-  }, [displayName, avatar, session, signIn, onClose])
+  }, [displayName, avatar, session, onClose])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
