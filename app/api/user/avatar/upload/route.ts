@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { put, del, list } from '@vercel/blob'
+import { put, del } from '@vercel/blob'
+import fs from 'fs'
 import path from 'path'
+
+/**
+ * 检查是否配置了 Vercel Blob
+ */
+function isBlobConfigured(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN
+}
 
 /**
  * 解析头像历史记录 JSON 字符串
@@ -22,6 +30,41 @@ function parseAvatarHistory(jsonString: string | null): string[] {
  */
 function stringifyAvatarHistory(history: string[]): string {
   return JSON.stringify(history)
+}
+
+/**
+ * 使用本地文件系统保存头像（备选方案）
+ */
+async function saveAvatarToLocal(buffer: Buffer, userId: string, fileExtension: string): Promise<string> {
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
+  const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', fileName)
+  
+  // 确保目录存在
+  const dirPath = path.dirname(filePath)
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true })
+  }
+  
+  // 保存文件
+  fs.writeFileSync(filePath, buffer)
+  
+  // 返回访问 URL
+  return `/uploads/avatars/${fileName}`
+}
+
+/**
+ * 删除本地头像文件
+ */
+function deleteLocalAvatar(fileUrl: string): void {
+  try {
+    // 提取本地路径
+    const filePath = path.join(process.cwd(), 'public', fileUrl)
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+  } catch (error) {
+    console.warn('删除本地头像文件失败:', error)
+  }
 }
 
 /**
@@ -79,20 +122,47 @@ export async function POST(request: NextRequest) {
 
     // 读取文件内容
     const buffer = Buffer.from(await file.arrayBuffer())
-
-    // 生成唯一文件名
     const fileExtension = file.type.split('/')[1]
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
-    
-    // 使用 Vercel Blob 存储头像文件
-    // 路径格式: avatars/{userId}/{fileName}
-    const blobPath = `avatars/${userId}/${fileName}`
-    
-    // 上传到 Vercel Blob
-    const { url: avatarUrl } = await put(blobPath, buffer, {
-      access: 'public',
-      contentType: file.type,
-    })
+
+    let avatarUrl: string
+    const useBlob = isBlobConfigured()
+
+    try {
+      if (useBlob) {
+        // 使用 Vercel Blob 存储头像文件
+        const blobPath = `avatars/${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
+        
+        const { url } = await put(blobPath, buffer, {
+          access: 'public',
+          contentType: file.type,
+        })
+        
+        avatarUrl = url
+      } else {
+        // 备选方案：使用本地文件系统
+        avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
+      }
+    } catch (storageError) {
+      console.error('头像存储失败:', storageError)
+      
+      // 如果 Blob 存储失败，尝试回退到本地存储（仅开发环境）
+      if (useBlob) {
+        try {
+          avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
+          console.warn('Blob 存储失败，已回退到本地存储')
+        } catch (localError) {
+          return NextResponse.json(
+            { error: '头像存储失败，请稍后重试' },
+            { status: 500 }
+          )
+        }
+      } else {
+        return NextResponse.json(
+          { error: '头像存储失败，请稍后重试' },
+          { status: 500 }
+        )
+      }
+    }
 
     // 获取当前用户的头像历史
     const user = await prisma.user.findUnique({
@@ -143,8 +213,17 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('上传头像错误:', error)
     const errorMessage = error instanceof Error ? error.message : '上传头像失败'
+    
+    // 提供更友好的错误提示
+    let userMessage = errorMessage
+    if (errorMessage.includes('No blob credentials')) {
+      userMessage = '头像存储服务未配置，请联系管理员'
+    } else if (errorMessage.includes('read-only file system')) {
+      userMessage = '服务器存储不可用，请稍后重试'
+    }
+    
     return NextResponse.json(
-      { error: errorMessage },
+      { error: userMessage },
       { status: 500 }
     )
   }
@@ -269,13 +348,19 @@ export async function DELETE(request: NextRequest) {
     const existingHistory = parseAvatarHistory(user.avatarHistory)
     const updatedHistory = existingHistory.filter((h) => h !== url)
 
-    // 从 Vercel Blob 中删除文件
+    // 从存储中删除文件
+    const useBlob = isBlobConfigured()
     try {
-      // 提取 Blob 路径（从 URL 中提取）
-      const blobPath = new URL(url).pathname.substring(1) // 移除开头的 '/'
-      await del(blobPath)
+      if (useBlob && url.includes('blob.vercel-storage.com')) {
+        // 从 Vercel Blob 中删除
+        const blobPath = new URL(url).pathname.substring(1)
+        await del(blobPath)
+      } else if (!url.includes('blob.vercel-storage.com')) {
+        // 从本地文件系统删除
+        deleteLocalAvatar(url)
+      }
     } catch (deleteError) {
-      console.warn('删除 Blob 文件失败:', deleteError)
+      console.warn('删除头像文件失败:', deleteError)
       // 删除失败不阻止数据库更新
     }
 
