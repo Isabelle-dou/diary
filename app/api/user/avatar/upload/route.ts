@@ -37,16 +37,37 @@ function stringifyAvatarHistory(history: string[]): string {
  */
 async function saveAvatarToLocal(buffer: Buffer, userId: string, fileExtension: string): Promise<string> {
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
-  const filePath = path.join(process.cwd(), 'public', 'uploads', 'avatars', fileName)
+  
+  // 使用 __dirname 确保路径正确
+  const projectRoot = path.resolve(__dirname, '../../../../')
+  const filePath = path.join(projectRoot, 'public', 'uploads', 'avatars', fileName)
+  
+  console.log(`[saveAvatarToLocal] 项目根目录: ${projectRoot}`)
+  console.log(`[saveAvatarToLocal] 文件保存路径: ${filePath}`)
   
   // 确保目录存在
   const dirPath = path.dirname(filePath)
+  console.log(`[saveAvatarToLocal] 目录路径: ${dirPath}`)
+  
   if (!fs.existsSync(dirPath)) {
-    fs.mkdirSync(dirPath, { recursive: true })
+    console.log(`[saveAvatarToLocal] 创建目录: ${dirPath}`)
+    try {
+      fs.mkdirSync(dirPath, { recursive: true })
+      console.log(`[saveAvatarToLocal] 目录创建成功`)
+    } catch (mkdirError) {
+      console.error(`[saveAvatarToLocal] 目录创建失败:`, mkdirError)
+      throw new Error(`无法创建头像存储目录: ${(mkdirError as Error).message}`)
+    }
   }
   
   // 保存文件
-  fs.writeFileSync(filePath, buffer)
+  try {
+    fs.writeFileSync(filePath, buffer)
+    console.log(`[saveAvatarToLocal] 文件保存成功: ${fileName}`)
+  } catch (writeError) {
+    console.error(`[saveAvatarToLocal] 文件写入失败:`, writeError)
+    throw new Error(`无法保存头像文件: ${(writeError as Error).message}`)
+  }
   
   // 返回访问 URL
   return `/uploads/avatars/${fileName}`
@@ -72,9 +93,12 @@ function deleteLocalAvatar(fileUrl: string): void {
  * POST /api/user/avatar/upload
  */
 export async function POST(request: NextRequest) {
+  console.log('[Avatar Upload API] 开始处理头像上传请求')
+  
   try {
     // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    console.log('[Avatar Upload API] Session 获取完成:', session ? '已获取' : '未获取')
     
     // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
     let userId = session?.user?.id
@@ -86,25 +110,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (!userId) {
+      console.log('[Avatar Upload API] 用户未授权，返回 401')
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
       )
     }
 
+    console.log('[Avatar Upload API] 用户ID:', userId)
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
 
     if (!file) {
+      console.log('[Avatar Upload API] 未选择文件，返回 400')
       return NextResponse.json(
         { error: '请选择要上传的文件' },
         { status: 400 }
       )
     }
 
+    console.log('[Avatar Upload API] 文件信息:', { name: file.name, type: file.type, size: file.size })
+
     // 验证文件类型
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
+      console.log('[Avatar Upload API] 文件类型不支持:', file.type)
       return NextResponse.json(
         { error: '不支持的文件格式，支持 JPG、PNG、WEBP 格式' },
         { status: 400 }
@@ -114,6 +145,7 @@ export async function POST(request: NextRequest) {
     // 验证文件大小（最大 5MB）
     const maxSize = 5 * 1024 * 1024
     if (file.size > maxSize) {
+      console.log('[Avatar Upload API] 文件大小超过限制:', file.size)
       return NextResponse.json(
         { error: `文件大小超过限制，最大支持 ${maxSize / 1024 / 1024}MB` },
         { status: 400 }
@@ -124,12 +156,16 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const fileExtension = file.type.split('/')[1]
 
+    console.log('[Avatar Upload API] 文件读取完成，大小:', buffer.length)
+
     let avatarUrl: string
     const useBlob = isBlobConfigured()
+    console.log('[Avatar Upload API] 使用 Blob 存储:', useBlob)
 
     try {
       if (useBlob) {
         // 使用 Vercel Blob 存储头像文件
+        console.log('[Avatar Upload API] 开始上传到 Vercel Blob')
         const blobPath = `avatars/${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExtension}`
         
         const { url } = await put(blobPath, buffer, {
@@ -138,19 +174,24 @@ export async function POST(request: NextRequest) {
         })
         
         avatarUrl = url
+        console.log('[Avatar Upload API] Blob 上传成功:', avatarUrl)
       } else {
         // 备选方案：使用本地文件系统
+        console.log('[Avatar Upload API] 开始保存到本地文件系统')
         avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
+        console.log('[Avatar Upload API] 本地保存成功:', avatarUrl)
       }
     } catch (storageError) {
-      console.error('头像存储失败:', storageError)
+      console.error('[Avatar Upload API] 头像存储失败:', storageError)
       
       // 如果 Blob 存储失败，尝试回退到本地存储（仅开发环境）
       if (useBlob) {
+        console.log('[Avatar Upload API] Blob 存储失败，尝试回退到本地存储')
         try {
           avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
-          console.warn('Blob 存储失败，已回退到本地存储')
+          console.warn('[Avatar Upload API] Blob 存储失败，已回退到本地存储')
         } catch (localError) {
+          console.error('[Avatar Upload API] 本地存储也失败:', localError)
           return NextResponse.json(
             { error: '头像存储失败，请稍后重试' },
             { status: 500 }
