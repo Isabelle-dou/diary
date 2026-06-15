@@ -438,7 +438,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-gray-800">高级</p>
-                        <p className="text-xs text-gray-500">词汇量 > 6,000</p>
+                        <p className="text-xs text-gray-500">词汇量 {'&gt;'} 6,000</p>
                       </div>
                       {englishLevel === 'advanced' && (
                         <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
