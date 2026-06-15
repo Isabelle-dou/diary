@@ -114,16 +114,37 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         return
       }
 
-      // 使用signIn方法重新获取session，确保JWT token被更新
-      // 这会触发JWT callback并更新存储在浏览器中的token
-      // 使用refresh模式跳过密码验证
-      await signIn('credentials', {
-        email: session?.user?.email || '',
-        refresh: 'true',
-        redirect: false,
-        callbackUrl: '/',
+      // 调用refresh API刷新session，确保JWT token被更新
+      const refreshResponse = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
       })
-      console.log('Session refreshed successfully')
+      
+      if (refreshResponse.ok) {
+        const refreshResult = await refreshResponse.json()
+        console.log('Session refreshed successfully:', refreshResult)
+        
+        // 更新客户端session
+        await update({
+          ...session,
+          user: {
+            ...session?.user,
+            displayName: refreshResult.user.displayName,
+            avatar: refreshResult.user.avatar,
+          },
+        })
+      } else {
+        console.warn('Failed to refresh session, will use local update')
+        // 如果刷新失败，至少更新本地状态
+        await update({
+          ...session,
+          user: {
+            ...session?.user,
+            displayName: result.user.displayName,
+            avatar: result.user.avatar,
+          },
+        })
+      }
 
       setMessage('保存成功！')
       setTimeout(() => {
