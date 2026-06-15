@@ -52,6 +52,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
   const { data: session, update } = useSession()
   const [displayName, setDisplayName] = useState(session?.user?.displayName || '')
   const [avatar, setAvatar] = useState(session?.user?.avatar || '')
+  const [englishLevel, setEnglishLevel] = useState(session?.user?.englishLevel || 'beginner')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [activeTab, setActiveTab] = useState<'profile' | 'avatar'>('profile')
@@ -100,6 +101,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         body: JSON.stringify({
           displayName: displayName.trim() || null,
           avatar: avatar || null,
+          englishLevel: englishLevel,
         }),
       })
 
@@ -377,6 +379,75 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
                 />
                 <p className="text-xs text-gray-400 mt-1">{displayName.length}/50</p>
+              </div>
+
+              {/* 英语水平选择 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  英语水平
+                </label>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setEnglishLevel('beginner')}
+                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
+                      englishLevel === 'beginner'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-800">初级</p>
+                        <p className="text-xs text-gray-500">词汇量 1,000 - 3,000</p>
+                      </div>
+                      {englishLevel === 'beginner' && (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setEnglishLevel('intermediate')}
+                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
+                      englishLevel === 'intermediate'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-800">中级</p>
+                        <p className="text-xs text-gray-500">词汇量 3,000 - 6,000</p>
+                      </div>
+                      {englishLevel === 'intermediate' && (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setEnglishLevel('advanced')}
+                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
+                      englishLevel === 'advanced'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-800">高级</p>
+                        <p className="text-xs text-gray-500">词汇量 > 6,000</p>
+                      </div>
+                      {englishLevel === 'advanced' && (
+                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           ) : (

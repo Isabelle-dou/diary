@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { displayName, avatar } = body
+    const { displayName, avatar, englishLevel } = body
 
     // 验证 displayName
     if (displayName !== undefined) {
@@ -63,13 +63,26 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // 验证 englishLevel
+    if (englishLevel !== undefined) {
+      if (!['beginner', 'intermediate', 'advanced'].includes(englishLevel)) {
+        return NextResponse.json(
+          { error: '无效的英语水平' },
+          { status: 400 }
+        )
+      }
+    }
+
     // 更新用户资料
-    const updateData: { displayName?: string; avatar?: string | null } = {}
+    const updateData: { displayName?: string; avatar?: string | null; englishLevel?: string } = {}
     if (displayName !== undefined) {
       updateData.displayName = displayName.trim() || null
     }
     if (avatar !== undefined) {
       updateData.avatar = avatar || null
+    }
+    if (englishLevel !== undefined) {
+      updateData.englishLevel = englishLevel
     }
 
     const user = await prisma.user.update({
