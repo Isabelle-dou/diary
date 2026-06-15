@@ -8,9 +8,18 @@ import path from 'path'
 
 /**
  * 检查是否配置了 Vercel Blob
+ * 
+ * Vercel Blob 支持两种认证方式：
+ * 1. 新版（推荐）：自动认证，通过 BLOB_STORE_ID 识别存储
+ * 2. 旧版：使用 BLOB_READ_WRITE_TOKEN 手动认证
  */
 function isBlobConfigured(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN
+  // 新版：检查是否有 BLOB_STORE_ID（Vercel自动配置）
+  // 旧版：检查是否有 BLOB_READ_WRITE_TOKEN（手动配置）
+  const hasNewAuth = !!process.env.BLOB_STORE_ID
+  const hasOldAuth = !!process.env.BLOB_READ_WRITE_TOKEN
+  
+  return hasNewAuth || hasOldAuth
 }
 
 /**
