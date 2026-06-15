@@ -11,10 +11,19 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(request: NextRequest) {
   try {
-    // 首先获取当前session
+    // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
+    let userId = session?.user?.id
+    if (!userId) {
+      const userIdCookie = request.cookies.get('user-id')
+      if (userIdCookie?.value) {
+        userId = userIdCookie.value
+      }
+    }
+    
+    if (!userId) {
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }
@@ -23,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // 从数据库获取最新的用户信息
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         id: true,
         email: true,

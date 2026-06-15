@@ -124,26 +124,36 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         const refreshResult = await refreshResponse.json()
         console.log('Session refreshed successfully:', refreshResult)
         
-        // 使用NextAuth的update方法更新session
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            displayName: refreshResult.user.displayName,
-            avatar: refreshResult.user.avatar,
-          },
-        })
+        // 如果session存在，使用NextAuth的update方法更新session
+        if (session) {
+          await update({
+            ...session,
+            user: {
+              ...session.user,
+              displayName: refreshResult.user.displayName,
+              avatar: refreshResult.user.avatar,
+            },
+          })
+        } else {
+          // 如果session为null，强制刷新页面，让NextAuth重新初始化session
+          // 由于session callback从数据库获取最新信息，刷新后会显示最新的用户信息
+          setTimeout(() => {
+            window.location.reload()
+          }, 500)
+        }
       } else {
-        console.warn('Failed to refresh session, will use local update')
-        // 如果刷新失败，至少更新本地状态
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            displayName: result.user.displayName,
-            avatar: result.user.avatar,
-          },
-        })
+        console.warn('Failed to refresh session')
+        // 如果刷新失败且session存在，至少更新本地状态
+        if (session) {
+          await update({
+            ...session,
+            user: {
+              ...session.user,
+              displayName: result.user.displayName,
+              avatar: result.user.avatar,
+            },
+          })
+        }
       }
 
       setMessage('保存成功！')
