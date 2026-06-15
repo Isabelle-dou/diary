@@ -11,19 +11,27 @@ import { prisma } from '@/lib/prisma'
  */
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Refresh API] ====== 开始 ======')
+    
     // 首先尝试从 NextAuth session 获取用户 ID
     const session = await getServerSession(authOptions)
+    console.log('[Refresh API] NextAuth session:', session ? '存在' : '不存在')
+    console.log('[Refresh API] NextAuth session user ID:', session?.user?.id)
     
     // 如果没有 NextAuth session，尝试从自定义的 user-id cookie 获取
     let userId = session?.user?.id
     if (!userId) {
       const userIdCookie = request.cookies.get('user-id')
+      console.log('[Refresh API] user-id cookie:', userIdCookie ? userIdCookie.value : '不存在')
       if (userIdCookie?.value) {
         userId = userIdCookie.value
       }
     }
     
+    console.log('[Refresh API] 最终 userId:', userId)
+    
     if (!userId) {
+      console.log('[Refresh API] ====== 结束（未授权） ======')
       return NextResponse.json(
         { error: '未授权访问，请先登录' },
         { status: 401 }

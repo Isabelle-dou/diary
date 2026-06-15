@@ -54,15 +54,15 @@ export async function POST(request: Request) {
     }, { status: 200 })
 
     // 使用 response.cookies.set() 来设置 cookie（API Route 的正确方式）
-    // 在 Vercel 生产环境中，secure 会自动处理（默认情况下 Next.js 会根据环境自动设置）
+    // 在生产环境中使用 secure=true 和 httpOnly=true，确保安全性
     // 使用 lax 而不是 strict 来确保在导航时能正确传递
     // 不设置 domain，让浏览器自动处理，避免跨域问题
-    // 注意：httpOnly 设置为 false 以便前端可以读取 cookie 进行验证（临时调试）
+    const isProduction = process.env.NODE_ENV === 'production'
     response.cookies.set('user-id', user.id, {
-      httpOnly: false,  // 临时改为 false，让前端可以读取验证
-      secure: false,    // 临时改为 false，确保在非 HTTPS 环境也能设置
+      httpOnly: true,   // 生产环境中设置为true，提高安全性
+      secure: isProduction,  // 生产环境中设置为true，只在HTTPS下传输
       sameSite: 'lax',
-      maxAge: 24 * 60 * 60,
+      maxAge: 30 * 24 * 60 * 60,  // 30天
       path: '/',
     })
     
