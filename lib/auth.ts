@@ -29,6 +29,11 @@ export const authOptions: NextAuthOptions = {
           type: 'password',
           placeholder: 'your-password',
         },
+        refresh: {
+          label: 'Refresh',
+          type: 'text',
+          placeholder: 'true/false',
+        },
       },
       async authorize(credentials) {
         console.log('[NextAuth] ====== Authorize 开始 ======')
