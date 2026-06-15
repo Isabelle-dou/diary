@@ -14,6 +14,14 @@ function isBlobConfigured(): boolean {
 }
 
 /**
+ * 检查是否在 Vercel 生产环境中运行
+ */
+function isVercelProduction(): boolean {
+  // Vercel 生产环境会设置这些环境变量
+  return !!process.env.VERCEL && process.env.NODE_ENV === 'production'
+}
+
+/**
  * 解析头像历史记录 JSON 字符串
  */
 function parseAvatarHistory(jsonString: string | null): string[] {
@@ -160,7 +168,18 @@ export async function POST(request: NextRequest) {
 
     let avatarUrl: string
     const useBlob = isBlobConfigured()
+    const inVercelProduction = isVercelProduction()
     console.log('[Avatar Upload API] 使用 Blob 存储:', useBlob)
+    console.log('[Avatar Upload API] 是否在 Vercel 生产环境:', inVercelProduction)
+
+    // Vercel 生产环境必须配置 Blob
+    if (inVercelProduction && !useBlob) {
+      console.error('[Avatar Upload API] Vercel 生产环境未配置 Blob 存储')
+      return NextResponse.json(
+        { error: '头像存储服务未配置，请联系管理员' },
+        { status: 500 }
+      )
+    }
 
     try {
       if (useBlob) {
@@ -176,7 +195,7 @@ export async function POST(request: NextRequest) {
         avatarUrl = url
         console.log('[Avatar Upload API] Blob 上传成功:', avatarUrl)
       } else {
-        // 备选方案：使用本地文件系统
+        // 备选方案：使用本地文件系统（仅开发环境）
         console.log('[Avatar Upload API] 开始保存到本地文件系统')
         avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
         console.log('[Avatar Upload API] 本地保存成功:', avatarUrl)
@@ -184,8 +203,8 @@ export async function POST(request: NextRequest) {
     } catch (storageError) {
       console.error('[Avatar Upload API] 头像存储失败:', storageError)
       
-      // 如果 Blob 存储失败，尝试回退到本地存储（仅开发环境）
-      if (useBlob) {
+      // 如果 Blob 存储失败，只有非生产环境才尝试回退到本地存储
+      if (useBlob && !inVercelProduction) {
         console.log('[Avatar Upload API] Blob 存储失败，尝试回退到本地存储')
         try {
           avatarUrl = await saveAvatarToLocal(buffer, userId, fileExtension)
@@ -197,6 +216,14 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           )
         }
+      } else if (useBlob && inVercelProduction) {
+        // Vercel 生产环境中 Blob 失败，直接返回错误
+        const errorMsg = storageError instanceof Error ? storageError.message : '存储失败'
+        console.error('[Avatar Upload API] Vercel Blob 存储失败:', errorMsg)
+        return NextResponse.json(
+          { error: '头像存储服务暂时不可用，请稍后重试' },
+          { status: 500 }
+        )
       } else {
         return NextResponse.json(
           { error: '头像存储失败，请稍后重试' },
