@@ -124,8 +124,15 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         const refreshResult = await refreshResponse.json()
         console.log('Session refreshed successfully:', refreshResult)
         
-        // 强制刷新页面，确保新的session cookie被正确读取
-        window.location.reload()
+        // 使用NextAuth的update方法更新session
+        await update({
+          ...session,
+          user: {
+            ...session?.user,
+            displayName: refreshResult.user.displayName,
+            avatar: refreshResult.user.avatar,
+          },
+        })
       } else {
         console.warn('Failed to refresh session, will use local update')
         // 如果刷新失败，至少更新本地状态

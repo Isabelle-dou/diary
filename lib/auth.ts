@@ -163,13 +163,49 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      session.user = {
-        id: token.id as string,
-        email: token.email as string,
-        displayName: token.displayName as string | undefined,
-        avatar: token.avatar as string | undefined,
-        englishLevel: token.englishLevel as string,
+      // 从数据库获取最新的用户信息，确保session始终是最新的
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            avatar: true,
+            englishLevel: true,
+          }
+        })
+        
+        if (user) {
+          session.user = {
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName ?? undefined,
+            avatar: user.avatar ?? undefined,
+            englishLevel: user.englishLevel,
+          }
+        } else {
+          // 如果用户不存在，使用token中的数据
+          session.user = {
+            id: token.id as string,
+            email: token.email as string,
+            displayName: token.displayName as string | undefined,
+            avatar: token.avatar as string | undefined,
+            englishLevel: token.englishLevel as string,
+          }
+        }
+      } catch (error) {
+        // 如果数据库查询失败，使用token中的数据
+        console.error('[NextAuth] Failed to fetch user from database:', error)
+        session.user = {
+          id: token.id as string,
+          email: token.email as string,
+          displayName: token.displayName as string | undefined,
+          avatar: token.avatar as string | undefined,
+          englishLevel: token.englishLevel as string,
+        }
       }
+      
       return session
     },
   },
