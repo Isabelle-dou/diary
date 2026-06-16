@@ -1603,4 +1603,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       )}
     </div>
   )
+  }
+}
+}
 }
