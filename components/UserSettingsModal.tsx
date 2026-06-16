@@ -55,7 +55,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
   const [englishLevel, setEnglishLevel] = useState(session?.user?.englishLevel || 'beginner')
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [activeTab, setActiveTab] = useState<'profile' | 'avatar'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'avatar' | 'level'>('profile')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showCropModal, setShowCropModal] = useState(false)
   const [cropImage, setCropImage] = useState('')
@@ -341,6 +341,16 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
           >
             头像设置
           </button>
+          <button
+            onClick={() => setActiveTab('level')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'level'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            英语水平
+          </button>
         </div>
 
         {/* 内容区域 */}
@@ -381,73 +391,126 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
                 />
                 <p className="text-xs text-gray-400 mt-1">{displayName.length}/50</p>
               </div>
+            </div>
+          ) : activeTab === 'level' ? (
+            <div className="space-y-6">
+              {/* 标题区域 */}
+              <div className="text-center py-4">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-gray-800">选择你的英语水平</h4>
+                <p className="text-sm text-gray-500 mt-1">我们将根据你的水平提供个性化的学习建议</p>
+              </div>
 
-              {/* 英语水平选择 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  英语水平
-                </label>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setEnglishLevel('beginner')}
-                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
-                      englishLevel === 'beginner'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">初级</p>
-                        <p className="text-xs text-gray-500">词汇量 1,000 - 3,000</p>
-                      </div>
-                      {englishLevel === 'beginner' && (
-                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
+              {/* 水平选择区域 */}
+              <div className="space-y-3">
+                {/* 初级 */}
+                <button
+                  onClick={() => setEnglishLevel('beginner')}
+                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+                    englishLevel === 'beginner'
+                      ? 'border-green-500 bg-green-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      englishLevel === 'beginner' ? 'bg-green-500' : 'bg-gray-100'
+                    }`}>
+                      <svg className={`w-5 h-5 ${englishLevel === 'beginner' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
                     </div>
-                  </button>
-                  <button
-                    onClick={() => setEnglishLevel('intermediate')}
-                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
-                      englishLevel === 'intermediate'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">中级</p>
-                        <p className="text-xs text-gray-500">词汇量 3,000 - 6,000</p>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h5 className={`font-semibold ${englishLevel === 'beginner' ? 'text-green-700' : 'text-gray-800'}`}>初级</h5>
+                        {englishLevel === 'beginner' && (
+                          <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
-                      {englishLevel === 'intermediate' && (
-                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
+                      <p className="text-sm text-gray-500 mt-1">词汇量 1,000 - 3,000</p>
+                      <p className="text-xs text-gray-400 mt-2">适合英语初学者，学习基础词汇和简单句型</p>
                     </div>
-                  </button>
-                  <button
-                    onClick={() => setEnglishLevel('advanced')}
-                    className={`w-full p-3 border-2 rounded-lg text-left transition-all ${
-                      englishLevel === 'advanced'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">高级</p>
-                        <p className="text-xs text-gray-500">词汇量 {'&gt;'} 6,000</p>
+                  </div>
+                </button>
+
+                {/* 中级 */}
+                <button
+                  onClick={() => setEnglishLevel('intermediate')}
+                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+                    englishLevel === 'intermediate'
+                      ? 'border-blue-500 bg-blue-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      englishLevel === 'intermediate' ? 'bg-blue-500' : 'bg-gray-100'
+                    }`}>
+                      <svg className={`w-5 h-5 ${englishLevel === 'intermediate' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h5 className={`font-semibold ${englishLevel === 'intermediate' ? 'text-blue-700' : 'text-gray-800'}`}>中级</h5>
+                        {englishLevel === 'intermediate' && (
+                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
                       </div>
-                      {englishLevel === 'advanced' && (
-                        <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                      )}
+                      <p className="text-sm text-gray-500 mt-1">词汇量 3,000 - 6,000</p>
+                      <p className="text-xs text-gray-400 mt-2">适合有一定基础的学习者，提升阅读理解和表达能力</p>
                     </div>
-                  </button>
+                  </div>
+                </button>
+
+                {/* 高级 */}
+                <button
+                  onClick={() => setEnglishLevel('advanced')}
+                  className={`w-full p-4 border-2 rounded-xl text-left transition-all duration-200 ${
+                    englishLevel === 'advanced'
+                      ? 'border-purple-500 bg-purple-50 shadow-sm'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      englishLevel === 'advanced' ? 'bg-purple-500' : 'bg-gray-100'
+                    }`}>
+                      <svg className={`w-5 h-5 ${englishLevel === 'advanced' ? 'text-white' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <h5 className={`font-semibold ${englishLevel === 'advanced' ? 'text-purple-700' : 'text-gray-800'}`}>高级</h5>
+                        {englishLevel === 'advanced' && (
+                          <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">词汇量 {'&gt;'} 6,000</p>
+                      <p className="text-xs text-gray-400 mt-2">适合英语水平较高的学习者，专注于流利表达和深度理解</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* 当前水平提示 */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>当前选择：{englishLevel === 'beginner' ? '初级' : englishLevel === 'intermediate' ? '中级' : '高级'}</span>
                 </div>
               </div>
             </div>
