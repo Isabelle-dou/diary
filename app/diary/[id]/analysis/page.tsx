@@ -947,9 +947,8 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
         <BottomNav />
       </div>
     )
-  }
-
-  return (
+  } else {
+    return (
     <div className="min-h-screen bg-white pb-20 md:pb-0">
       {/* 顶部导航栏 */}
       <header className="sticky top-0 bg-white border-b border-gray-100 z-10">
