@@ -607,19 +607,17 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-gray-800">{item.word}</span>
             </div>
-            {/* 水平等级标签 */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-gray-500">必须掌握：</span>
-              <div className="flex items-center gap-1">
-                {item.difficultyTags?.map((tag, tagIndex) => (
-                  <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded font-medium">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <p className="text-gray-600 text-xs mb-1">{item.definition}</p>
+            {<p className="text-gray-600 text-xs mb-1">{item.definition}</p>
             <p className="text-gray-500 text-xs italic">例：{item.example}</p>
+            {/* 水平等级标签 */}
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
+              {item.difficultyTags?.map((tag, tagIndex) => (
+                <span key={tagIndex} className="text-xs text-gray-500">
+                  {tagIndex > 0 && ' | '}
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -1286,19 +1284,17 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="text-lg font-semibold text-gray-800">{item.word}</span>
                             </div>
-                            {/* 水平等级标签 */}
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs text-gray-500">必须掌握：</span>
-                              <div className="flex items-center gap-1">
-                                {item.difficultyTags?.map((tag, tagIndex) => (
-                                  <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-700 rounded font-medium">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-gray-600 text-sm mb-1">{item.definition}</p>
+                            {<p className="text-gray-600 text-sm mb-1">{item.definition}</p>
                             <p className="text-gray-500 text-sm italic">例：{item.example}</p>
+                            {/* 水平等级标签 */}
+                            <div className="flex items-center gap-1 mt-2 flex-wrap">
+                              {item.difficultyTags?.map((tag, tagIndex) => (
+                                <span key={tagIndex} className="text-xs text-gray-500">
+                                  {tagIndex > 0 && ' | '}
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1475,19 +1471,17 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                                 {collected ? '★ 已收藏' : '☆ 收藏'}
                               </button>
                             </div>
-                            {/* 水平等级标签 */}
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs text-gray-500">必须掌握：</span>
-                              <div className="flex items-center gap-1">
-                                {item.difficultyTags?.map((tag, tagIndex) => (
-                                  <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-700 rounded font-medium">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <p className="text-gray-600 text-sm mb-1">{item.definition}</p>
+                            {<p className="text-gray-600 text-sm mb-1">{item.definition}</p>
                             <p className="text-gray-500 text-sm italic">例：{item.example}</p>
+                            {/* 水平等级标签 */}
+                            <div className="flex items-center gap-1 mt-2 flex-wrap">
+                              {item.difficultyTags?.map((tag, tagIndex) => (
+                                <span key={tagIndex} className="text-xs text-gray-500">
+                                  {tagIndex > 0 && ' | '}
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )
                       })}
