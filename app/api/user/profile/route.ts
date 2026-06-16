@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
 
     // 验证 englishLevel
     if (englishLevel !== undefined) {
-      if (!['beginner', 'intermediate', 'advanced'].includes(englishLevel)) {
+      if (!['primary', 'junior', 'senior', 'cet4', 'cet6', 'ielts', 'toefl'].includes(englishLevel)) {
         return NextResponse.json(
           { error: '无效的英语水平' },
           { status: 400 }
