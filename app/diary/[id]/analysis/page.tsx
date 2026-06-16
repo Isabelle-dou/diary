@@ -611,11 +611,15 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             <p className="text-gray-600 text-xs mb-1">{item.definition}</p>
             {/* 水平等级分类标识 */}
             <div className="flex items-center gap-1 mb-1">
-              {item.difficultyTags?.map((tag, tagIndex) => (
-                <span key={tagIndex} className="text-xs text-gray-500">
-                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
-                </span>
-              ))}
+              {item.difficultyTags && item.difficultyTags.length > 0 ? (
+                item.difficultyTags.map((tag, tagIndex) => (
+                  <span key={tagIndex} className="text-xs text-gray-600 font-medium">
+                    {tag}{tagIndex < item.difficultyTags.length - 1 ? ' | ' : ''}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-gray-400">暂无分类</span>
+              )}
             </div>
             <p className="text-gray-500 text-xs italic">例：{item.example}</p>
           </div>
@@ -1288,11 +1292,15 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                             <p className="text-gray-600 text-sm mb-2">{item.definition}</p>
                             {/* 水平等级分类标识 */}
                             <div className="flex items-center gap-1 mb-2 flex-wrap">
-                              {item.difficultyTags?.map((tag, tagIndex) => (
-                                <span key={tagIndex} className="text-xs text-gray-600">
-                                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
-                                </span>
-                              ))}
+                              {item.difficultyTags && item.difficultyTags.length > 0 ? (
+                                item.difficultyTags.map((tag, tagIndex) => (
+                                  <span key={tagIndex} className="text-xs text-gray-700 font-medium">
+                                    {tag}{tagIndex < item.difficultyTags.length - 1 ? ' | ' : ''}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs text-gray-400">暂无分类</span>
+                              )}
                             </div>
                             <p className="text-gray-500 text-sm italic">例：{item.example}</p>
                           </div>
@@ -1475,11 +1483,15 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                             <p className="text-gray-600 text-sm mb-2">{item.definition}</p>
                             {/* 水平等级分类标识 */}
                             <div className="flex items-center gap-1 mb-2 flex-wrap">
-                              {item.difficultyTags?.map((tag, tagIndex) => (
-                                <span key={tagIndex} className="text-xs text-gray-600">
-                                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
-                                </span>
-                              ))}
+                              {item.difficultyTags && item.difficultyTags.length > 0 ? (
+                                item.difficultyTags.map((tag, tagIndex) => (
+                                  <span key={tagIndex} className="text-xs text-gray-700 font-medium">
+                                    {tag}{tagIndex < item.difficultyTags.length - 1 ? ' | ' : ''}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs text-gray-400">暂无分类</span>
+                              )}
                             </div>
                             <p className="text-gray-500 text-sm italic">例：{item.example}</p>
                           </div>
