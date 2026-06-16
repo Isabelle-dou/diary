@@ -607,7 +607,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-gray-800">{item.word}</span>
             </div>
-            {<p className="text-gray-600 text-xs mb-1">{item.definition}</p>
+            <p className="text-gray-600 text-xs mb-1">{item.definition}</p>
             <p className="text-gray-500 text-xs italic">例：{item.example}</p>
             {/* 水平等级标签 */}
             <div className="flex items-center gap-1 mt-1 flex-wrap">
