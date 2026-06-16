@@ -28,14 +28,9 @@ export default function EditDiaryPage() {
    * 加载日记数据
    */
   useEffect(() => {
-    // 检查是否有 user-id cookie
-    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-    
-    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
-    if (userIdCookie) {
-      fetchDiary()
-    }
-    // 如果没有 cookie，middleware 会处理重定向
+    // 页面能加载到这里说明 middleware 已经认证通过
+    // 直接加载数据，不需要检查 cookie（httpOnly cookie 对 JS 不可见）
+    fetchDiary()
   }, [])
 
   const fetchDiary = async () => {

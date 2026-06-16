@@ -33,14 +33,9 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 检查是否有 user-id cookie
-    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-    
-    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
-    if (userIdCookie) {
-      fetchReportData()
-    }
-    // 如果没有 cookie，middleware 会处理重定向
+    // 页面能加载到这里说明 middleware 已经认证通过
+    // 直接加载数据，不需要检查 cookie（httpOnly cookie 对 JS 不可见）
+    fetchReportData()
   }, [period, customStartDate, customEndDate])
 
   const fetchReportData = async () => {

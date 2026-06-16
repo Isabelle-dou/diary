@@ -145,28 +145,17 @@ export default function DashboardPage() {
 
   // 简化认证检查：信任 middleware 的认证
   // 只要页面能加载到这里，说明已经通过认证
-  // 不再检查 NextAuth status，因为我们使用自定义 cookie 认证
+  // 不再检查 NextAuth status 或 cookie，因为我们使用自定义 httpOnly cookie 认证
   useEffect(() => {
     console.log('[Dashboard-AuthCheck] ====== 认证检查开始 ======')
     console.log('[Dashboard-AuthCheck] NextAuth status:', status)
     console.log('[Dashboard-AuthCheck] NextAuth session:', session)
     
-    // 检查是否有 user-id cookie（确认用户已登录）
-    const userIdCookie = document.cookie.split(';').find(cookie => cookie.trim().startsWith('user-id='))
-    console.log('[Dashboard-AuthCheck] user-id cookie 存在:', !!userIdCookie)
-    console.log('[Dashboard-AuthCheck] user-id cookie 值:', userIdCookie)
-    console.log('[Dashboard-AuthCheck] 所有 cookies:', document.cookie)
-    
-    // 只要有 user-id cookie 就加载数据，不依赖 NextAuth status
-    if (userIdCookie) {
-      console.log('[Dashboard-AuthCheck] 用户已认证（user-id cookie），开始加载数据...')
-      fetchDiaries()
-      fetchStreak()
-    } else {
-      console.log('[Dashboard-AuthCheck] 用户未认证（无 cookie），等待 middleware 重定向...')
-      // 如果没有 cookie，说明真的未认证
-      // 注意：不再主动重定向，由 middleware 处理
-    }
+    // 页面能加载到这里说明 middleware 已经认证通过
+    // 直接加载数据，不需要检查 cookie（httpOnly cookie 对 JS 不可见）
+    console.log('[Dashboard-AuthCheck] 页面已通过 middleware 认证，开始加载数据...')
+    fetchDiaries()
+    fetchStreak()
   }, [fetchDiaries, fetchStreak])
 
   const formatDate = (dateString: string) => {
