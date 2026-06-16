@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { getLevelLabels } from './vocabulary-levels'
 
 // Initialize DeepSeek client (API compatible with OpenAI format)
 const deepseek = new OpenAI({
@@ -179,20 +180,34 @@ function validateAndSupplementSuggestions(result: AiAnalysisResult): AiAnalysisR
     }
   }
   
-  // Add difficulty tags to vocabulary suggestions from AI
+  // Add difficulty tags to vocabulary suggestions from AI using vocabulary levels database
   result.vocabularySuggestions.forEach(vocab => {
     vocab.suggestions.forEach(suggestion => {
       if (!suggestion.difficultyTags || suggestion.difficultyTags.length === 0) {
-        suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+        // 使用词汇等级库查询真实等级
+        const realLevels = getLevelLabels(suggestion.word)
+        if (realLevels.length > 0) {
+          suggestion.difficultyTags = realLevels
+        } else {
+          // 如果词库中没有，使用默认映射
+          suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+        }
       }
     })
   })
   
-  // Add difficulty tags to upgrade suggestions from AI
+  // Add difficulty tags to upgrade suggestions from AI using vocabulary levels database
   result.upgradeSuggestions.forEach(upgrade => {
     upgrade.suggestions.forEach(suggestion => {
       if (!suggestion.difficultyTags || suggestion.difficultyTags.length === 0) {
-        suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+        // 使用词汇等级库查询真实等级
+        const realLevels = getLevelLabels(suggestion.word)
+        if (realLevels.length > 0) {
+          suggestion.difficultyTags = realLevels
+        } else {
+          // 如果词库中没有，使用默认映射
+          suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+        }
       }
     })
   })
