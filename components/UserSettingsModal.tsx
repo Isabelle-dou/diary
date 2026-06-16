@@ -80,6 +80,32 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     }
   }, [])
 
+  // 弹窗打开时从API获取最新用户信息，确保数据与数据库同步
+  useEffect(() => {
+    if (isOpen) {
+      const fetchLatestUserInfo = async () => {
+        try {
+          const response = await fetch('/api/user/profile', {
+            credentials: 'include',
+          })
+          if (response.ok) {
+            const result = await response.json()
+            if (result.success && result.user) {
+              // 用数据库中的最新数据覆盖本地状态
+              setDisplayName(result.user.displayName || '')
+              setAvatar(result.user.avatar || '')
+              setEnglishLevel(result.user.englishLevel || 'beginner')
+            }
+          }
+        } catch (error) {
+          console.error('获取最新用户信息失败:', error)
+        }
+      }
+
+      fetchLatestUserInfo()
+    }
+  }, [isOpen])
+
   useEffect(() => {
     if (isOpen && activeTab === 'avatar') {
       fetchAvatarHistory()
