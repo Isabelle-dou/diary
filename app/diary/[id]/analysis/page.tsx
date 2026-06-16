@@ -604,7 +604,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       <div className="space-y-2">
         {suggestion.suggestions.map((item, index) => (
           <div key={index} className="p-2 bg-gray-50 rounded">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="font-medium text-gray-800">{item.word}</span>
               <span className={`px-2 py-0.5 text-xs rounded-full ${
                 item.level === 'beginner' ? 'bg-green-100 text-green-700' :
@@ -613,6 +613,14 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
               }`}>
                 {item.levelName}
               </span>
+              {/* 难度标签 */}
+              <div className="flex items-center gap-1 ml-1">
+                {item.difficultyTags?.map((tag, tagIndex) => (
+                  <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
             <p className="text-gray-600 text-xs mb-1">{item.definition}</p>
             <p className="text-gray-500 text-xs italic">例：{item.example}</p>
@@ -1279,7 +1287,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                       <div className="space-y-2">
                         {suggestion.suggestions.map((item: VocabularySuggestionItem, index: number) => (
                           <div key={index} className="p-3 bg-white rounded-lg border border-gray-100">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className="text-lg font-semibold text-gray-800">{item.word}</span>
                               <span className={`px-2 py-0.5 text-xs rounded-full ${
                                 item.level === 'beginner' ? 'bg-green-100 text-green-700' :
@@ -1288,6 +1296,14 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                               }`}>
                                 {item.levelName}
                               </span>
+                              {/* 难度标签 */}
+                              <div className="flex items-center gap-1 ml-1">
+                                {item.difficultyTags?.map((tag, tagIndex) => (
+                                  <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                             <p className="text-gray-600 text-sm mb-1">{item.definition}</p>
                             <p className="text-gray-500 text-sm italic">例：{item.example}</p>
@@ -1453,7 +1469,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                         return (
                           <div key={index} className="p-3 bg-white rounded-lg border border-gray-100">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-lg font-semibold text-gray-800">{item.word}</span>
                                 <span className={`px-2 py-0.5 text-xs rounded-full ${
                                   item.level === 'beginner' ? 'bg-green-100 text-green-700' :
@@ -1462,6 +1478,14 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                                 }`}>
                                   {item.levelName}
                                 </span>
+                                {/* 难度标签 */}
+                                <div className="flex items-center gap-1 ml-1">
+                                  {item.difficultyTags?.map((tag, tagIndex) => (
+                                    <span key={tagIndex} className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
                               <button
                                 onClick={handleCollect}

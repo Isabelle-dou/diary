@@ -28,6 +28,7 @@ export interface VocabularySuggestionItem {
   word: string
   level: string
   levelName: string
+  difficultyTags: string[] // 难度标签，如 ['初中', '高中', 'CET4', 'CET6', '考研']
   definition: string
   example: string
 }
@@ -54,6 +55,7 @@ export interface UpgradeSuggestionItem {
   word: string
   level: string
   levelName: string
+  difficultyTags: string[] // 难度标签，如 ['初中', '高中', 'CET4', 'CET6', '考研']
   definition: string
   example: string
 }
@@ -80,11 +82,77 @@ export interface AiAnalysisResult {
 // Convert English level to Chinese display name
 function getLevelDisplayName(level: string): string {
   const levelMap: Record<string, string> = {
+    primary: '小学阶段',
+    junior: '初中阶段',
+    senior: '高中阶段',
+    cet4: '大学英语四级',
+    cet6: '大学英语六级',
+    ielts: '雅思',
+    toefl: '托福',
     beginner: '初级',
     intermediate: '中级',
     advanced: '高级',
   }
-  return levelMap[level] || '初级'
+  return levelMap[level] || '小学阶段'
+}
+
+// Get level tier for adaptive evaluation
+function getLevelTier(level: string): 1 | 2 | 3 | 4 | 5 | 6 | 7 {
+  const tierMap: Record<string, 1 | 2 | 3 | 4 | 5 | 6 | 7> = {
+    primary: 1,   // 小学
+    junior: 2,    // 初中
+    senior: 3,    // 高中
+    cet4: 4,      // 四级
+    cet6: 5,      // 六级
+    ielts: 6,     // 雅思
+    toefl: 7,     // 托福
+    beginner: 2,   // 旧版初级映射到初中
+    intermediate: 4, // 旧版中级映射到四级
+    advanced: 6,   // 旧版高级映射到雅思
+  }
+  return tierMap[level] || 1
+}
+
+// Get evaluation criteria based on user level
+function getEvaluationCriteria(level: string): {
+  grammarStrictness: 'lenient' | 'normal' | 'strict'
+  vocabularyDepth: 'basic' | 'intermediate' | 'advanced'
+  collocationComplexity: 'simple' | 'moderate' | 'complex'
+  upgradeIntensity: 'minimal' | 'moderate' | 'aggressive'
+  scoreBias: number
+} {
+  const tier = getLevelTier(level)
+  
+  // Tier 1-2: 小学、初中 - 宽松标准
+  if (tier <= 2) {
+    return {
+      grammarStrictness: 'lenient',
+      vocabularyDepth: 'basic',
+      collocationComplexity: 'simple',
+      upgradeIntensity: 'minimal',
+      scoreBias: 15 // 加分偏置，鼓励初学者
+    }
+  }
+  // Tier 3-4: 高中、四级 - 正常标准
+  else if (tier <= 4) {
+    return {
+      grammarStrictness: 'normal',
+      vocabularyDepth: 'intermediate',
+      collocationComplexity: 'moderate',
+      upgradeIntensity: 'moderate',
+      scoreBias: 5
+    }
+  }
+  // Tier 5-7: 六级、雅思、托福 - 严格标准
+  else {
+    return {
+      grammarStrictness: 'strict',
+      vocabularyDepth: 'advanced',
+      collocationComplexity: 'complex',
+      upgradeIntensity: 'aggressive',
+      scoreBias: -5 // 减分偏置，要求更高
+    }
+  }
 }
 
 /**
@@ -97,29 +165,61 @@ function validateAndSupplementSuggestions(result: AiAnalysisResult): AiAnalysisR
   result.collocationSuggestions = result.collocationSuggestions || []
   result.upgradeSuggestions = result.upgradeSuggestions || []
   
+  // Helper function to get difficulty tags based on level
+  const getDifficultyTags = (level: string): string[] => {
+    switch (level) {
+      case 'beginner':
+        return ['初中']
+      case 'intermediate':
+        return ['高中', 'CET4']
+      case 'advanced':
+        return ['CET6', '考研']
+      default:
+        return ['初中']
+    }
+  }
+  
+  // Add difficulty tags to vocabulary suggestions from AI
+  result.vocabularySuggestions.forEach(vocab => {
+    vocab.suggestions.forEach(suggestion => {
+      if (!suggestion.difficultyTags || suggestion.difficultyTags.length === 0) {
+        suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+      }
+    })
+  })
+  
+  // Add difficulty tags to upgrade suggestions from AI
+  result.upgradeSuggestions.forEach(upgrade => {
+    upgrade.suggestions.forEach(suggestion => {
+      if (!suggestion.difficultyTags || suggestion.difficultyTags.length === 0) {
+        suggestion.difficultyTags = getDifficultyTags(suggestion.level)
+      }
+    })
+  })
+  
   // Vocabulary suggestions: at least 3
   if (result.vocabularySuggestions.length < 3) {
     console.log('[AI Analyzer] Supplementing vocabulary suggestions...')
     const baseVocabulary = [
       { word: 'good', suggestions: [
-        { word: 'excellent', level: 'intermediate', levelName: '中级', definition: '优秀的', example: 'She did an excellent job.' },
-        { word: 'outstanding', level: 'advanced', levelName: '高级', definition: '杰出的', example: 'He made an outstanding contribution.' }
+        { word: 'excellent', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '优秀的', example: 'She did an excellent job.' },
+        { word: 'outstanding', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '杰出的', example: 'He made an outstanding contribution.' }
       ]},
       { word: 'happy', suggestions: [
-        { word: 'delighted', level: 'intermediate', levelName: '中级', definition: '高兴的', example: 'I was delighted to meet you.' },
-        { word: 'overjoyed', level: 'advanced', levelName: '高级', definition: '欣喜若狂的', example: 'She was overjoyed at the news.' }
+        { word: 'delighted', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '高兴的', example: 'I was delighted to meet you.' },
+        { word: 'overjoyed', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '欣喜若狂的', example: 'She was overjoyed at the news.' }
       ]},
       { word: 'think', suggestions: [
-        { word: 'believe', level: 'intermediate', levelName: '中级', definition: '相信', example: 'I believe you are right.' },
-        { word: 'convinced', level: 'advanced', levelName: '高级', definition: '确信的', example: 'I am convinced of his innocence.' }
+        { word: 'believe', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '相信', example: 'I believe you are right.' },
+        { word: 'convinced', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '确信的', example: 'I am convinced of his innocence.' }
       ]},
       { word: 'get', suggestions: [
-        { word: 'obtain', level: 'intermediate', levelName: '中级', definition: '获得', example: 'He obtained a degree.' },
-        { word: 'acquire', level: 'advanced', levelName: '高级', definition: '获取', example: 'She acquired new skills.' }
+        { word: 'obtain', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '获得', example: 'He obtained a degree.' },
+        { word: 'acquire', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '获取', example: 'She acquired new skills.' }
       ]},
       { word: 'help', suggestions: [
-        { word: 'assist', level: 'intermediate', levelName: '中级', definition: '协助', example: 'I will assist you.' },
-        { word: 'facilitate', level: 'advanced', levelName: '高级', definition: '促进', example: 'The tool facilitates learning.' }
+        { word: 'assist', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '协助', example: 'I will assist you.' },
+        { word: 'facilitate', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '促进', example: 'The tool facilitates learning.' }
       ]}
     ]
     
@@ -174,16 +274,16 @@ function validateAndSupplementSuggestions(result: AiAnalysisResult): AiAnalysisR
     console.log('[AI Analyzer] Supplementing upgrade suggestions...')
     const baseUpgrades = [
       { text: 'I think', suggestions: [
-        { word: 'I believe', level: 'intermediate', levelName: '中级', definition: '我相信', example: 'I believe this is the right choice.' },
-        { word: 'I am convinced', level: 'advanced', levelName: '高级', definition: '我确信', example: 'I am convinced of its importance.' }
+        { word: 'I believe', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '我相信', example: 'I believe this is the right choice.' },
+        { word: 'I am convinced', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '我确信', example: 'I am convinced of its importance.' }
       ], explanation: '使用更正式、更有说服力的表达' },
       { text: 'a lot of', suggestions: [
-        { word: 'numerous', level: 'intermediate', levelName: '中级', definition: '许多的', example: 'Numerous people attended the event.' },
-        { word: 'a plethora of', level: 'advanced', levelName: '高级', definition: '大量的', example: 'There is a plethora of options.' }
+        { word: 'numerous', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '许多的', example: 'Numerous people attended the event.' },
+        { word: 'a plethora of', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '大量的', example: 'There is a plethora of options.' }
       ], explanation: '使用更正式的书面表达替代口语化短语' },
       { text: 'very happy', suggestions: [
-        { word: 'delighted', level: 'intermediate', levelName: '中级', definition: '高兴的', example: 'I was delighted to hear the news.' },
-        { word: 'elated', level: 'advanced', levelName: '高级', definition: '兴高采烈的', example: 'The team was elated after winning.' }
+        { word: 'delighted', level: 'intermediate', levelName: '中级', difficultyTags: ['高中', 'CET4'], definition: '高兴的', example: 'I was delighted to hear the news.' },
+        { word: 'elated', level: 'advanced', levelName: '高级', difficultyTags: ['CET6', '考研'], definition: '兴高采烈的', example: 'The team was elated after winning.' }
       ], explanation: '使用更精确的形容词替代 "very + 形容词" 结构' }
     ]
     
@@ -364,28 +464,85 @@ function extractJsonFromResponse(text: string): AiAnalysisResult {
 }
 
 /**
- * Build the prompt for AI analysis
+ * Build the prompt for AI analysis with level-based evaluation
  * @param content - Diary content text
  * @param levelDisplayName - User's English level in Chinese
+ * @param userLevel - User's English level code
  * @returns Complete prompt string
  */
-function buildAnalysisPrompt(content: string, levelDisplayName: string): string {
-  return `你是一位专业的英语老师，擅长帮助学生提高英语写作能力。请全面分析以下英文日记内容，务必同时提供以下四类分析结果：
+function buildAnalysisPrompt(content: string, levelDisplayName: string, userLevel: string): string {
+  const tier = getLevelTier(userLevel)
+  const criteria = getEvaluationCriteria(userLevel)
+  
+  // Build level-specific instructions
+  let levelInstructions = ''
+  let grammarFocus = ''
+  let vocabularyFocus = ''
+  let collocationFocus = ''
+  let upgradeFocus = ''
+  
+  if (tier <= 2) {
+    // 小学、初中 - 宽松标准
+    levelInstructions = `
+【水平适配说明 - ${levelDisplayName}】
+- 语法检查：重点关注明显的时态错误、主谓不一致、基础拼写错误
+- 词汇建议：推荐常用、实用的替换词，避免过于生僻的词汇
+- 评价标准：以鼓励为主，对基础语法错误宽容，重视学习积极性
+- 评分倾向：适当加分，鼓励初学者建立信心
+    `.trim()
+    
+    grammarFocus = '重点检查明显的语法错误（时态、主谓一致、基础拼写），小的语法瑕疵可以宽容对待'
+    vocabularyFocus = '推荐常用、高频词汇，避免过于生僻的单词'
+    collocationFocus = '识别常见搭配错误，提供简单实用的替换'
+    upgradeFocus = '仅建议最明显的升级机会，避免让初学者感到压力'
+  } else if (tier <= 4) {
+    // 高中、四级 - 正常标准
+    levelInstructions = `
+【水平适配说明 - ${levelDisplayName}】
+- 语法检查：全面检查各类语法错误，包括时态、主谓一致、冠词、介词等
+- 词汇建议：提供中级难度的替换词，逐步提升词汇多样性
+- 评价标准：平衡鼓励与严格要求，帮助学生巩固基础并提升能力
+- 评分倾向：标准评分，既肯定优点也指出改进空间
+    `.trim()
+    
+    grammarFocus = '全面检查语法错误，包括时态、主谓一致、冠词、介词使用'
+    vocabularyFocus = '提供中级难度的词汇替换，丰富表达多样性'
+    collocationFocus = '识别搭配不当或不够地道的表达，提供自然的替换'
+    upgradeFocus = '建议合理的升级机会，帮助提升表达质量'
+  } else {
+    // 六级、雅思、托福 - 严格标准
+    levelInstructions = `
+【水平适配说明 - ${levelDisplayName}】
+- 语法检查：严格检查所有语法细节，包括复杂句结构、时态一致性、从句使用等
+- 词汇建议：提供高级词汇替换，注重精确表达和风格多样性
+- 评价标准：高标准严要求，关注表达的准确性、地道性和专业性
+- 评分倾向：适当减分，要求更高的语言质量
+    `.trim()
+    
+    grammarFocus = '严格检查所有语法细节，包括复杂句结构、时态一致性、从句使用等'
+    vocabularyFocus = '提供高级词汇替换，注重精确表达和风格多样性'
+    collocationFocus = '识别不够地道的搭配，提供更专业、更自然的表达'
+    upgradeFocus = '积极建议升级机会，提升表达的专业性和地道性'
+  }
+
+  return `你是一位专业的英语老师，擅长根据学生的英语水平提供个性化的写作指导。请全面分析以下英文日记内容，务必同时提供以下四类分析结果：
 
 1. 语法错误检查：找出所有语法错误（时态、主谓一致、冠词、介词、拼写等）
 2. 词汇替换建议：识别可以用更精确词汇替换的常用词，提供不同难度的替换选项
 3. 搭配优化建议：识别用词搭配不当或可以优化的短语，提供更地道的表达
 4. 升级建议：识别"正确但平庸"的表达，提供更高级、更地道的替换
 
+${levelInstructions}
+
 【强制性要求】
-- grammarErrors（语法错误）：必须检查，至少返回所有明显错误
-- vocabularySuggestions（词汇建议）：必须返回，至少3个。如果文中没有明显的"错误词汇"，请主动识别以下基础词汇并提供替换：good, bad, nice, big, small, happy, sad, get, make, do, have, help, think, say, go, come, very + 任何形容词, but, and, so, because。这些词即使使用正确，也必须提供同义替换建议。
-- collocationSuggestions（搭配建议）：必须返回，至少2个。请主动检查以下常见搭配：make + 名词（make progress, make a decision等）、get + 形容词/名词、very + 形容词、a lot of + 名词、help + 人、任何动词 + 介词组合。即使搭配没有错误，也可以提供更地道的替代表达。
-- upgradeSuggestions（升级建议）：必须返回，至少2个。识别文中"正确但平庸"的短语：I think / I believe、a lot of / lots of、very + 形容词、in my opinion、because / so。
+- grammarErrors（语法错误）：${grammarFocus}，至少返回所有明显错误
+- vocabularySuggestions（词汇建议）：${vocabularyFocus}，至少3个。如果文中没有明显的"错误词汇"，请主动识别以下基础词汇并提供替换：good, bad, nice, big, small, happy, sad, get, make, do, have, help, think, say, go, come, very + 任何形容词, but, and, so, because。这些词即使使用正确，也必须提供同义替换建议。
+- collocationSuggestions（搭配建议）：${collocationFocus}，至少2个。请主动检查以下常见搭配：make + 名词（make progress, make a decision等）、get + 形容词/名词、very + 形容词、a lot of + 名词、help + 人、任何动词 + 介词组合。即使搭配没有错误，也可以提供更地道的替代表达。
+- upgradeSuggestions（升级建议）：${upgradeFocus}，至少2个。识别文中"正确但平庸"的短语：I think / I believe、a lot of / lots of、very + 形容词、in my opinion、because / so。
 
 请严格遵守以上要求，确保每类建议都满足最低数量要求。
 
-用户英语水平：${levelDisplayName}（初级/中级/高级）
+用户英语水平：${levelDisplayName}
 
 === 重要索引规则 ===
 1. startIndex 和 endIndex 必须是原始文本中的精确字符位置（从0开始计数）
@@ -418,7 +575,10 @@ function buildAnalysisPrompt(content: string, levelDisplayName: string): string 
 6. vocabularySuggestions 和 upgradeSuggestions 的 level 只能是：beginner（初级）、intermediate（中级）、advanced（高级）
 7. vocabularySuggestions 和 upgradeSuggestions 的 levelName 只能是：初级、中级、高级
 8. grammarErrors 的 typeName 只能是：时态错误、主谓不一致、冠词错误、介词错误、拼写错误、名词单复数、动词形式错误、其他
-9. 词汇建议应根据用户水平提供合适难度的替换词
+9. 词汇建议应根据用户水平提供合适难度的替换词：
+   - 小学/初中水平：优先推荐初级和中级词汇
+   - 高中/四级水平：均衡推荐各难度词汇
+   - 六级/雅思/托福水平：优先推荐中级和高级词汇
 10. 输出必须是有效的 JSON 格式，不要包含 markdown 代码块，不要包含其他内容
 
 === 词汇建议说明 ===
@@ -479,6 +639,16 @@ upgradeSuggestions（升级建议）是识别文中"正确但平庸"的短语和
 
 **要求：** 每篇日记最多5-8个升级建议，避免过度建议
 
+=== 评分标准（根据用户水平动态调整）===
+- ${levelDisplayName}水平评分原则：
+  - 基础语法正确：+20分
+  - 词汇使用恰当：+20分  
+  - 句子结构多样：+20分
+  - 表达流畅自然：+20分
+  - 内容丰富有深度：+20分
+  - 语法错误扣分：根据错误严重程度扣1-5分/处
+  - 词汇单调扣分：过度使用基础词汇扣1-3分/词
+
 === 示例输出格式 ===
 {
   "grammarErrors": [
@@ -520,7 +690,7 @@ export async function analyzeDiary(
   userLevel: string
 ): Promise<AiAnalysisResult> {
   const levelDisplayName = getLevelDisplayName(userLevel)
-  const prompt = buildAnalysisPrompt(content, levelDisplayName)
+  const prompt = buildAnalysisPrompt(content, levelDisplayName, userLevel)
 
   // Validate DeepSeek API Key
   const apiKey = process.env.DEEPSEEK_API_KEY
