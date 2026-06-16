@@ -134,6 +134,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
               ...session.user,
               displayName: refreshResult.user.displayName,
               avatar: refreshResult.user.avatar,
+              englishLevel: refreshResult.user.englishLevel,
             },
           })
         }
