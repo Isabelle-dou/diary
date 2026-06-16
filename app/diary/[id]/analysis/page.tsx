@@ -1,5 +1,4 @@
 'use client'
-// Build trigger: force Vercel rebuild - attempt 2
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
@@ -608,17 +607,17 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
             <div className="flex items-center gap-2 mb-1">
               <span className="font-medium text-gray-800">{item.word}</span>
             </div>
+            {/* 词汇解释 */}
             <p className="text-gray-600 text-xs mb-1">{item.definition}</p>
-            <p className="text-gray-500 text-xs italic">例：{item.example}</p>
-            {/* 水平等级标签 */}
-            <div className="flex items-center gap-1 mt-1 flex-wrap">
+            {/* 水平等级分类标识 */}
+            <div className="flex items-center gap-1 mb-1">
               {item.difficultyTags?.map((tag, tagIndex) => (
                 <span key={tagIndex} className="text-xs text-gray-500">
-                  {tagIndex > 0 && ' | '}
-                  {tag}
+                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
                 </span>
               ))}
             </div>
+            <p className="text-gray-500 text-xs italic">例：{item.example}</p>
           </div>
         ))}
       </div>
@@ -948,8 +947,9 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
         <BottomNav />
       </div>
     )
-  } else {
-    return (
+  }
+
+  return (
     <div className="min-h-screen bg-white pb-20 md:pb-0">
       {/* 顶部导航栏 */}
       <header className="sticky top-0 bg-white border-b border-gray-100 z-10">
@@ -1281,20 +1281,20 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                       <div className="space-y-2">
                         {suggestion.suggestions.map((item: VocabularySuggestionItem, index: number) => (
                           <div key={index} className="p-3 bg-white rounded-lg border border-gray-100">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <span className="text-lg font-semibold text-gray-800">{item.word}</span>
                             </div>
-                            {<p className="text-gray-600 text-sm mb-1">{item.definition}</p>
-                            <p className="text-gray-500 text-sm italic">例：{item.example}</p>
-                            {/* 水平等级标签 */}
-                            <div className="flex items-center gap-1 mt-2 flex-wrap">
+                            {/* 词汇解释 */}
+                            <p className="text-gray-600 text-sm mb-2">{item.definition}</p>
+                            {/* 水平等级分类标识 */}
+                            <div className="flex items-center gap-1 mb-2 flex-wrap">
                               {item.difficultyTags?.map((tag, tagIndex) => (
-                                <span key={tagIndex} className="text-xs text-gray-500">
-                                  {tagIndex > 0 && ' | '}
-                                  {tag}
+                                <span key={tagIndex} className="text-xs text-gray-600">
+                                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
                                 </span>
                               ))}
                             </div>
+                            <p className="text-gray-500 text-sm italic">例：{item.example}</p>
                           </div>
                         ))}
                       </div>
@@ -1456,7 +1456,7 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                         
                         return (
                           <div key={index} className="p-3 bg-white rounded-lg border border-gray-100">
-                            <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center justify-between mb-2">
                               <span className="text-lg font-semibold text-gray-800">{item.word}</span>
                               <button
                                 onClick={handleCollect}
@@ -1471,17 +1471,17 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
                                 {collected ? '★ 已收藏' : '☆ 收藏'}
                               </button>
                             </div>
-                            {<p className="text-gray-600 text-sm mb-1">{item.definition}</p>
-                            <p className="text-gray-500 text-sm italic">例：{item.example}</p>
-                            {/* 水平等级标签 */}
-                            <div className="flex items-center gap-1 mt-2 flex-wrap">
+                            {/* 词汇解释 */}
+                            <p className="text-gray-600 text-sm mb-2">{item.definition}</p>
+                            {/* 水平等级分类标识 */}
+                            <div className="flex items-center gap-1 mb-2 flex-wrap">
                               {item.difficultyTags?.map((tag, tagIndex) => (
-                                <span key={tagIndex} className="text-xs text-gray-500">
-                                  {tagIndex > 0 && ' | '}
-                                  {tag}
+                                <span key={tagIndex} className="text-xs text-gray-600">
+                                  {tag}{tagIndex < (item.difficultyTags?.length || 0) - 1 ? ' | ' : ''}
                                 </span>
                               ))}
                             </div>
+                            <p className="text-gray-500 text-sm italic">例：{item.example}</p>
                           </div>
                         )
                       })}
@@ -1603,7 +1603,4 @@ export default function DiaryAnalysisPage({ params }: { params: { id: string } }
       )}
     </div>
   )
-  }
-}
-}
 }
