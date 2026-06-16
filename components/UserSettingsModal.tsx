@@ -54,6 +54,7 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
   const [avatar, setAvatar] = useState(session?.user?.avatar || '')
   const [englishLevel, setEnglishLevel] = useState(session?.user?.englishLevel || 'beginner')
   const [isLoading, setIsLoading] = useState(false)
+  const [isDataLoading, setIsDataLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [activeTab, setActiveTab] = useState<'profile' | 'avatar' | 'level'>('profile')
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -80,28 +81,32 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     }
   }, [])
 
-  // 弹窗打开时从API获取最新用户信息，确保数据与数据库同步
+  // 弹窗打开或组件挂载时从API获取最新用户信息，确保数据与数据库同步
   useEffect(() => {
-    if (isOpen) {
-      const fetchLatestUserInfo = async () => {
-        try {
-          const response = await fetch('/api/user/profile', {
-            credentials: 'include',
-          })
-          if (response.ok) {
-            const result = await response.json()
-            if (result.success && result.user) {
-              // 用数据库中的最新数据覆盖本地状态
-              setDisplayName(result.user.displayName || '')
-              setAvatar(result.user.avatar || '')
-              setEnglishLevel(result.user.englishLevel || 'beginner')
-            }
+    const fetchLatestUserInfo = async () => {
+      setIsDataLoading(true)
+      try {
+        const response = await fetch('/api/user/profile', {
+          credentials: 'include',
+        })
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success && result.user) {
+            // 用数据库中的最新数据覆盖本地状态
+            setDisplayName(result.user.displayName || '')
+            setAvatar(result.user.avatar || '')
+            setEnglishLevel(result.user.englishLevel || 'beginner')
           }
-        } catch (error) {
-          console.error('获取最新用户信息失败:', error)
         }
+      } catch (error) {
+        console.error('获取最新用户信息失败:', error)
+      } finally {
+        setIsDataLoading(false)
       }
+    }
 
+    // 只在弹窗打开时获取数据，避免不必要的API调用
+    if (isOpen) {
       fetchLatestUserInfo()
     }
   }, [isOpen])
@@ -544,8 +549,14 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
                 <p className="text-sm text-gray-500 mt-1">我们将根据你的水平提供个性化的学习建议</p>
               </div>
 
-              {/* 水平选择区域 */}
-              <div className="space-y-3">
+              {/* 加载状态 */}
+              {isDataLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500"></div>
+                </div>
+              ) : (
+                /* 水平选择区域 */
+                <div className="space-y-3">
                 {/* 初级 */}
                 <button
                   onClick={() => setEnglishLevel('beginner')}
@@ -641,7 +652,8 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
                     </div>
                   </div>
                 </button>
-              </div>
+                </div>
+              )}
 
               {/* 当前水平提示 */}
               <div className="mt-6 bg-gray-50 rounded-xl p-4">
