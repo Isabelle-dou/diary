@@ -378,7 +378,9 @@ function extractJsonFromResponse(text: string): AiAnalysisResult {
     try {
       const result = JSON.parse(codeBlockMatch[1].trim()) as AiAnalysisResult
       console.log('[AI Analyzer] ✓ SUCCESS: Parsed from markdown code block!')
-      return result
+      // Validate and supplement missing suggestions
+      const validatedResult = validateAndSupplementSuggestions(result)
+      return validatedResult
     } catch (e) {
       console.log('[AI Analyzer] ✗ Code block parse failed:', (e as Error).message)
     }
@@ -394,7 +396,9 @@ function extractJsonFromResponse(text: string): AiAnalysisResult {
     try {
       const result = JSON.parse(jsonStr) as AiAnalysisResult
       console.log('[AI Analyzer] ✓ SUCCESS: Parsed extracted JSON!')
-      return result
+      // Validate and supplement missing suggestions
+      const validatedResult = validateAndSupplementSuggestions(result)
+      return validatedResult
     } catch (e) {
       console.log('[AI Analyzer] ✗ Extracted JSON parse failed:', (e as Error).message)
       
@@ -412,7 +416,9 @@ function extractJsonFromResponse(text: string): AiAnalysisResult {
       try {
         const result = JSON.parse(fixedJson) as AiAnalysisResult
         console.log('[AI Analyzer] ✓ SUCCESS: Parsed fixed JSON!')
-        return result
+        // Validate and supplement missing suggestions
+        const validatedResult = validateAndSupplementSuggestions(result)
+        return validatedResult
       } catch (e2) {
         console.log('[AI Analyzer] ✗ Fixed JSON still failed:', (e2 as Error).message)
       }
@@ -452,7 +458,9 @@ function extractJsonFromResponse(text: string): AiAnalysisResult {
       }
       
       console.log('[AI Analyzer] ✓ SUCCESS: Reconstructed JSON from parts!')
-      return result
+      // Validate and supplement missing suggestions
+      const validatedResult = validateAndSupplementSuggestions(result)
+      return validatedResult
     } catch (e) {
       console.log('[AI Analyzer] ✗ Reconstruction failed:', (e as Error).message)
     }
