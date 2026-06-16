@@ -1,4 +1,5 @@
 'use client'
+// Build trigger: force Vercel rebuild
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
