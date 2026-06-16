@@ -86,14 +86,141 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     }
   }, [isOpen, activeTab, fetchAvatarHistory])
 
+  // 保存昵称
+  const saveDisplayName = useCallback(async () => {
+    setIsLoading(true)
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          displayName: displayName.trim() || null,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setMessage(result.error || '保存失败')
+        setIsLoading(false)
+        return
+      }
+
+      if (session) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            displayName: result.user.displayName,
+          },
+        })
+      }
+
+      setMessage('昵称保存成功！')
+      setTimeout(() => setMessage(''), 2000)
+    } catch (error) {
+      console.error('Save displayName error:', error)
+      setMessage('保存发生错误')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [displayName, session, update])
+
+  // 保存头像
+  const saveAvatar = useCallback(async () => {
+    setIsLoading(true)
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          avatar: avatar || null,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setMessage(result.error || '保存失败')
+        setIsLoading(false)
+        return
+      }
+
+      if (session) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            avatar: result.user.avatar,
+          },
+        })
+      }
+
+      setMessage('头像保存成功！')
+      setTimeout(() => setMessage(''), 2000)
+    } catch (error) {
+      console.error('Save avatar error:', error)
+      setMessage('保存发生错误')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [avatar, session, update])
+
+  // 保存英语水平
+  const saveEnglishLevel = useCallback(async () => {
+    setIsLoading(true)
+    setMessage('')
+
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          englishLevel: englishLevel,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        setMessage(result.error || '保存失败')
+        setIsLoading(false)
+        return
+      }
+
+      if (session) {
+        await update({
+          ...session,
+          user: {
+            ...session.user,
+            englishLevel: result.user.englishLevel,
+          },
+        })
+      }
+
+      setMessage('英语水平保存成功！')
+      setTimeout(() => setMessage(''), 2000)
+    } catch (error) {
+      console.error('Save englishLevel error:', error)
+      setMessage('保存发生错误')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [englishLevel, session, update])
+
+  // 保存所有更改（用于底部统一保存按钮）
   const handleSave = useCallback(async () => {
     setIsLoading(true)
     setMessage('')
 
     try {
-      console.log('=== User Settings Save Start ===')
-      console.log('Sending update:', { displayName, avatar })
-      
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -105,18 +232,14 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
         }),
       })
 
-      console.log('API response status:', response.status)
       const result = await response.json()
-      console.log('API response data:', result)
 
       if (!response.ok) {
-        console.error('Save failed:', result.error || 'Unknown error')
         setMessage(result.error || '保存失败')
         setIsLoading(false)
         return
       }
 
-      // 调用refresh API刷新session，确保JWT token被更新
       const refreshResponse = await fetch('/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',
@@ -124,9 +247,6 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
       
       if (refreshResponse.ok) {
         const refreshResult = await refreshResponse.json()
-        console.log('Session refreshed successfully:', refreshResult)
-        
-        // 如果session存在，使用NextAuth的update方法更新session
         if (session) {
           await update({
             ...session,
@@ -135,22 +255,6 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
               displayName: refreshResult.user.displayName,
               avatar: refreshResult.user.avatar,
               englishLevel: refreshResult.user.englishLevel,
-            },
-          })
-        }
-        // 如果session不存在，不强制刷新页面
-        // 因为强制刷新会导致数据丢失（NextAuth session仍然为null）
-        // 用户信息已经保存到数据库，下次页面刷新时会从数据库读取
-      } else {
-        console.warn('Failed to refresh session')
-        // 如果刷新失败且session存在，至少更新本地状态
-        if (session) {
-          await update({
-            ...session,
-            user: {
-              ...session.user,
-              displayName: result.user.displayName,
-              avatar: result.user.avatar,
             },
           })
         }
@@ -164,10 +268,10 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
     } catch (error) {
       console.error('Save error:', error)
       setMessage('保存发生错误')
+    } finally {
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
-  }, [displayName, avatar, session, onClose])
+  }, [displayName, avatar, englishLevel, session, update])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -377,19 +481,28 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
               </div>
 
               {/* 昵称输入 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  昵称
-                </label>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    昵称
+                  </label>
+                  <span className="text-xs text-gray-400">{displayName.length}/50</span>
+                </div>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="输入你的昵称"
                   maxLength={50}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm bg-white"
                 />
-                <p className="text-xs text-gray-400 mt-1">{displayName.length}/50</p>
+                <button
+                  onClick={saveDisplayName}
+                  disabled={isLoading}
+                  className="mt-3 w-full py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? '保存中...' : '保存昵称'}
+                </button>
               </div>
             </div>
           ) : activeTab === 'level' ? (
@@ -505,13 +618,20 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
               </div>
 
               {/* 当前水平提示 */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="mt-6 bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>当前选择：{englishLevel === 'beginner' ? '初级' : englishLevel === 'intermediate' ? '中级' : '高级'}</span>
                 </div>
+                <button
+                  onClick={saveEnglishLevel}
+                  disabled={isLoading}
+                  className="w-full py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-medium rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? '保存中...' : '保存英语水平'}
+                </button>
               </div>
             </div>
           ) : (
@@ -688,11 +808,20 @@ export default function UserSettingsModal({ isOpen, onClose, onLogout }: UserSet
 
               {/* 当前头像预览 */}
               {avatar && (
-                <div className="flex flex-col items-center mt-4">
-                  <p className="text-xs text-gray-500 mb-2">当前头像预览</p>
-                  <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-100">
-                    <img src={avatar} alt="当前头像" className="w-full h-full object-cover" />
+                <div className="bg-gray-50 rounded-xl p-4 mt-4">
+                  <div className="flex flex-col items-center">
+                    <p className="text-xs text-gray-500 mb-2">当前头像预览</p>
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-100">
+                      <img src={avatar} alt="当前头像" className="w-full h-full object-cover" />
+                    </div>
                   </div>
+                  <button
+                    onClick={saveAvatar}
+                    disabled={isLoading}
+                    className="mt-4 w-full py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? '保存中...' : '保存头像'}
+                  </button>
                 </div>
               )}
             </div>
